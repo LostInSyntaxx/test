@@ -131,7 +131,6 @@ local StateStore = {
 
     movementMode = "AutoFarm",
     currentSearchQuery = "",
-    backpackSearchQuery = "",
     sortMode = "Name",
     tpKeybind = Enum.KeyCode.T,
 
@@ -316,83 +315,6 @@ function Utils.resetVelocity(root)
         root.RotVelocity = Vector3.zero
     end)
 end
-
-function Utils.getBackpack()
-    local lp = ServiceManager.LocalPlayer
-    return (lp and lp:FindFirstChildOfClass("Backpack"))
-        or (lp and lp:FindFirstChild("Backpack"))
-end
-
-function Utils.getBackpackItems()
-    local items = {}
-    local backpack = Utils.getBackpack()
-    local char = Utils.getCharacter()
-    if char then
-        for _, child in ipairs(char:GetChildren()) do
-            if child:IsA("Tool") then
-                table.insert(items, {
-                    instance = child, name = child.Name, className = child.ClassName,
-                    isEquipped = true, textureId = child.TextureId or "", toolTip = child.ToolTip or ""
-                })
-            end
-        end
-    end
-    if backpack then
-        for _, child in ipairs(backpack:GetChildren()) do
-            if child:IsA("Tool") or child:IsA("Instance") then
-                table.insert(items, {
-                    instance = child, name = child.Name, className = child.ClassName,
-                    isEquipped = false,
-                    textureId = child:IsA("Tool") and child.TextureId or "",
-                    toolTip = child:IsA("Tool") and child.ToolTip or ""
-                })
-            end
-        end
-    end
-    return items
-end
-
-function Utils.printBackpack()
-    local items = Utils.getBackpackItems()
-    print("═══════════════════════════════════════════════════════════════")
-    print(string.format("🎒 [BACKPACK VIEWER] Total Items: %d", #items))
-    print("═══════════════════════════════════════════════════════════════")
-    if #items == 0 then
-        print("  (Backpack is empty / ไม่มีไอเทมในกระเป๋าหรือในมือ)")
-    else
-        for i, item in ipairs(items) do
-            local status = item.isEquipped and "[EQUIPPED]" or "[IN BAG]"
-            local tip = (#item.toolTip > 0) and (" (" .. item.toolTip .. ")") or ""
-            print(string.format("  [%d] %s %s | Class: %s%s", i, status, item.name, item.className, tip))
-        end
-    end
-    print("═══════════════════════════════════════════════════════════════")
-    return items
-end
-
-function Utils.equipTool(tool)
-    if not tool or not tool.Parent then return false end
-    local char = Utils.getCharacter()
-    local hum = Utils.getHumanoid()
-    if hum and tool:IsA("Tool") then hum:EquipTool(tool); return true
-    elseif char then tool.Parent = char; return true end
-    return false
-end
-
-function Utils.unequipTool(tool)
-    if not tool or not tool.Parent then return false end
-    local backpack = Utils.getBackpack()
-    local hum = Utils.getHumanoid()
-    if hum then hum:UnequipTools(); return true
-    elseif backpack then tool.Parent = backpack; return true end
-    return false
-end
-
-pcall(function()
-    _G.GetBackpackItems = Utils.getBackpackItems
-    _G.PrintBackpack = Utils.printBackpack
-    _G.ViewBackpack = Utils.printBackpack
-end)
 
 --==================================================
 -- [5] COMPONENT: StabilityComponent
@@ -1755,7 +1677,7 @@ function UIComponent.mount()
     local Tabs = {
         { id = "Eggs",     label = "Eggs",       icon = "🥚" },
         { id = "Farm",     label = "Automation", icon = "⚡" },
-        { id = "Backpack", label = "Backpack",   icon = "🎒" },
+        { id = "Time",     label = "Time",       icon = "⏱️" },
         { id = "History",  label = "History",    icon = "📜" },
         { id = "Settings", label = "Settings",   icon = "⚙️" },
     }
@@ -1916,7 +1838,6 @@ function UIComponent.mount()
 
     local populateList
     local updateLiveEggsSummary
-    local updateBackpackUI
     local updateHistoryUI
 
     -- ══════════════════════════════════════════════════════════════
@@ -2701,255 +2622,295 @@ function UIComponent.mount()
     end)
 
     -- ══════════════════════════════════════════════════════════════
-    -- [TAB 3] BACKPACK
+    -- [TAB 3] TIME & SESSION MONITOR (replaces Backpack)
     -- ══════════════════════════════════════════════════════════════
-    local BackpackPanel = tabPanels["Backpack"]
+    local TimePanel = tabPanels["Time"]
 
-    local BpToolbarCard = Instance.new("Frame")
-    BpToolbarCard.Size = UDim2.new(1, 0, 0, 46)
-    BpToolbarCard.BackgroundColor3 = AppConfig.NestedCardBg
-    BpToolbarCard.Parent = BackpackPanel
-    UIComponent.applyCard(BpToolbarCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
+    local TimeScroll = Instance.new("ScrollingFrame")
+    TimeScroll.Size = UDim2.new(1, 0, 1, 0)
+    TimeScroll.BackgroundTransparency = 1
+    TimeScroll.BorderSizePixel = 0
+    TimeScroll.ScrollBarThickness = 3
+    TimeScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
+    TimeScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    TimeScroll.Parent = TimePanel
 
-    local BackpackCountBadge = Instance.new("TextLabel")
-    BackpackCountBadge.Size = UDim2.new(0, 120, 1, 0)
-    BackpackCountBadge.Position = UDim2.new(0, 14, 0, 0)
-    BackpackCountBadge.BackgroundTransparency = 1
-    BackpackCountBadge.Text = "🎒 Items: (0)"
-    BackpackCountBadge.TextColor3 = AppConfig.AccentBlue
-    BackpackCountBadge.TextSize = AppConfig.TextHeader
-    BackpackCountBadge.Font = Enum.Font.GothamBold
-    BackpackCountBadge.TextXAlignment = Enum.TextXAlignment.Left
-    BackpackCountBadge.Parent = BpToolbarCard
+    local TimeScrollLayout = Instance.new("UIListLayout")
+    TimeScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TimeScrollLayout.Padding = UDim.new(0, 8)
+    TimeScrollLayout.Parent = TimeScroll
 
-    local BpSearchBoxContainer = Instance.new("Frame")
-    BpSearchBoxContainer.Size = UDim2.new(1, -230, 0, 28)
-    BpSearchBoxContainer.Position = UDim2.new(0, 134, 0.5, -14)
-    BpSearchBoxContainer.BackgroundColor3 = AppConfig.RecessedBg
-    BpSearchBoxContainer.Parent = BpToolbarCard
-    UIComponent.applyCard(BpSearchBoxContainer, AppConfig.RadiusMD, AppConfig.RecessedBg, AppConfig.BorderInner)
-
-    local BackpackSearchBox = Instance.new("TextBox")
-    BackpackSearchBox.Size = UDim2.new(1, -26, 1, 0)
-    BackpackSearchBox.Position = UDim2.new(0, 10, 0, 0)
-    BackpackSearchBox.BackgroundTransparency = 1
-    BackpackSearchBox.PlaceholderText = "🔍 Search backpack..."
-    BackpackSearchBox.PlaceholderColor3 = AppConfig.TextMuted
-    BackpackSearchBox.Text = ""
-    BackpackSearchBox.TextColor3 = AppConfig.TextPrimary
-    BackpackSearchBox.TextSize = AppConfig.TextCaption
-    BackpackSearchBox.Font = Enum.Font.GothamMedium
-    BackpackSearchBox.TextXAlignment = Enum.TextXAlignment.Left
-    BackpackSearchBox.ClearTextOnFocus = false
-    BackpackSearchBox.Parent = BpSearchBoxContainer
-
-    local BpClearSearchBtn = Instance.new("TextButton")
-    BpClearSearchBtn.Size = UDim2.new(0, 22, 0, 22)
-    BpClearSearchBtn.Position = UDim2.new(1, -24, 0.5, -11)
-    BpClearSearchBtn.BackgroundTransparency = 1
-    BpClearSearchBtn.Text = "✕"
-    BpClearSearchBtn.TextColor3 = AppConfig.TextMuted
-    BpClearSearchBtn.TextSize = 10
-    BpClearSearchBtn.Font = Enum.Font.GothamBold
-    BpClearSearchBtn.Visible = false
-    BpClearSearchBtn.Parent = BpSearchBoxContainer
-
-    local PrintBackpackBtn = Instance.new("TextButton")
-    PrintBackpackBtn.Size = UDim2.new(0, 76, 0, 28)
-    PrintBackpackBtn.Position = UDim2.new(1, -86, 0.5, -14)
-    PrintBackpackBtn.BackgroundColor3 = AppConfig.RecessedBg
-    PrintBackpackBtn.Text = "Dump Log"
-    PrintBackpackBtn.TextColor3 = AppConfig.AccentBlue
-    PrintBackpackBtn.TextSize = AppConfig.TextCaption
-    PrintBackpackBtn.Font = Enum.Font.GothamBold
-    PrintBackpackBtn.Parent = BpToolbarCard
-    UIComponent.styleButton(PrintBackpackBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
-
-    local BpListCard = Instance.new("Frame")
-    BpListCard.Size = UDim2.new(1, 0, 1, -54)
-    BpListCard.Position = UDim2.new(0, 0, 0, 54)
-    BpListCard.BackgroundColor3 = AppConfig.NestedCardBg
-    BpListCard.Parent = BackpackPanel
-    UIComponent.applyCard(BpListCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
-
-    local BackpackScroll = Instance.new("ScrollingFrame")
-    BackpackScroll.Size = UDim2.new(1, -16, 1, -16)
-    BackpackScroll.Position = UDim2.new(0, 8, 0, 8)
-    BackpackScroll.BackgroundTransparency = 1
-    BackpackScroll.BorderSizePixel = 0
-    BackpackScroll.ScrollBarThickness = 3
-    BackpackScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
-    BackpackScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    BackpackScroll.Parent = BpListCard
-
-    local BackpackLayout = Instance.new("UIListLayout")
-    BackpackLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    BackpackLayout.Padding = UDim.new(0, 4)
-    BackpackLayout.Parent = BackpackScroll
-
-    BackpackLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        BackpackScroll.CanvasSize = UDim2.new(0, 0, 0, BackpackLayout.AbsoluteContentSize.Y + 6)
+    TimeScrollLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        TimeScroll.CanvasSize = UDim2.new(0, 0, 0, TimeScrollLayout.AbsoluteContentSize.Y + 12)
     end)
 
-    updateBackpackUI = function()
-        for _, child in ipairs(BackpackScroll:GetChildren()) do
-            if child ~= BackpackLayout then child:Destroy() end
+    -- Header card
+    local TimeHeaderCard = Instance.new("Frame")
+    TimeHeaderCard.Size = UDim2.new(1, -4, 0, 56)
+    TimeHeaderCard.LayoutOrder = 1
+    TimeHeaderCard.BackgroundColor3 = AppConfig.NestedCardBg
+    TimeHeaderCard.Parent = TimeScroll
+    UIComponent.applyCard(TimeHeaderCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.AccentBlue, 0.55)
+
+    local TimeHeaderTitle = Instance.new("TextLabel")
+    TimeHeaderTitle.Size = UDim2.new(1, -20, 0, 20)
+    TimeHeaderTitle.Position = UDim2.new(0, 14, 0, 8)
+    TimeHeaderTitle.BackgroundTransparency = 1
+    TimeHeaderTitle.Text = "⏱️  Time & Session Monitor"
+    TimeHeaderTitle.TextColor3 = AppConfig.AccentBlue
+    TimeHeaderTitle.TextSize = AppConfig.TextHeader
+    TimeHeaderTitle.Font = Enum.Font.GothamBold
+    TimeHeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+    TimeHeaderTitle.Parent = TimeHeaderCard
+
+    local TimeHeaderSub = Instance.new("TextLabel")
+    TimeHeaderSub.Size = UDim2.new(1, -20, 0, 16)
+    TimeHeaderSub.Position = UDim2.new(0, 14, 0, 30)
+    TimeHeaderSub.BackgroundTransparency = 1
+    TimeHeaderSub.Text = "Real-time clock • uptime • throughput"
+    TimeHeaderSub.TextColor3 = AppConfig.TextMuted
+    TimeHeaderSub.TextSize = AppConfig.TextCaption
+    TimeHeaderSub.Font = Enum.Font.GothamMedium
+    TimeHeaderSub.TextXAlignment = Enum.TextXAlignment.Left
+    TimeHeaderSub.Parent = TimeHeaderCard
+
+    -- Big current time display card
+    local BigClockCard = Instance.new("Frame")
+    BigClockCard.Size = UDim2.new(1, -4, 0, 92)
+    BigClockCard.LayoutOrder = 2
+    BigClockCard.BackgroundColor3 = AppConfig.RecessedBg
+    BigClockCard.Parent = TimeScroll
+    UIComponent.applyCard(BigClockCard, AppConfig.RadiusXL, AppConfig.RecessedBg, AppConfig.BorderInner)
+
+    local BigClockLabel = Instance.new("TextLabel")
+    BigClockLabel.Name = "BigClockLabel"
+    BigClockLabel.Size = UDim2.new(1, -20, 0, 44)
+    BigClockLabel.Position = UDim2.new(0, 10, 0, 12)
+    BigClockLabel.BackgroundTransparency = 1
+    BigClockLabel.Text = os.date("%H:%M:%S")
+    BigClockLabel.TextColor3 = AppConfig.AccentBlue
+    BigClockLabel.TextSize = 34
+    BigClockLabel.Font = Enum.Font.GothamBold
+    BigClockLabel.TextXAlignment = Enum.TextXAlignment.Center
+    BigClockLabel.Parent = BigClockCard
+
+    local BigDateLabel = Instance.new("TextLabel")
+    BigDateLabel.Name = "BigDateLabel"
+    BigDateLabel.Size = UDim2.new(1, -20, 0, 20)
+    BigDateLabel.Position = UDim2.new(0, 10, 0, 60)
+    BigDateLabel.BackgroundTransparency = 1
+    BigDateLabel.Text = os.date("%A, %B %d, %Y")
+    BigDateLabel.TextColor3 = AppConfig.TextSecondary
+    BigDateLabel.TextSize = AppConfig.TextBody
+    BigDateLabel.Font = Enum.Font.GothamMedium
+    BigDateLabel.TextXAlignment = Enum.TextXAlignment.Center
+    BigDateLabel.Parent = BigClockCard
+
+    -- Session stats card (rows)
+    local SessionStatsCard = Instance.new("Frame")
+    SessionStatsCard.Size = UDim2.new(1, -4, 0, 150)
+    SessionStatsCard.LayoutOrder = 3
+    SessionStatsCard.BackgroundColor3 = AppConfig.NestedCardBg
+    SessionStatsCard.Parent = TimeScroll
+    UIComponent.applyCard(SessionStatsCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+    local SsTitle = Instance.new("TextLabel")
+    SsTitle.Size = UDim2.new(1, -20, 0, 20)
+    SsTitle.Position = UDim2.new(0, 14, 0, 8)
+    SsTitle.BackgroundTransparency = 1
+    SsTitle.Text = "📊  Session Statistics"
+    SsTitle.TextColor3 = AppConfig.TextPrimary
+    SsTitle.TextSize = AppConfig.TextHeader
+    SsTitle.Font = Enum.Font.GothamBold
+    SsTitle.TextXAlignment = Enum.TextXAlignment.Left
+    SsTitle.Parent = SessionStatsCard
+
+    local SsInner = Instance.new("Frame")
+    SsInner.Size = UDim2.new(1, -20, 0, 106)
+    SsInner.Position = UDim2.new(0, 10, 0, 34)
+    SsInner.BackgroundColor3 = AppConfig.RecessedBg
+    SsInner.Parent = SessionStatsCard
+    UIComponent.applyCard(SsInner, AppConfig.RadiusLG, AppConfig.RecessedBg, AppConfig.BorderInner)
+
+    local function makeStatRow(parent, yPos, icon, title, valueColor)
+        local rowFrame = Instance.new("Frame")
+        rowFrame.Size = UDim2.new(1, 0, 0, 26)
+        rowFrame.Position = UDim2.new(0, 0, 0, yPos)
+        rowFrame.BackgroundTransparency = 1
+        rowFrame.Parent = parent
+
+        local iconLbl = Instance.new("TextLabel")
+        iconLbl.Size = UDim2.new(0, 24, 1, 0)
+        iconLbl.Position = UDim2.new(0, 10, 0, 0)
+        iconLbl.BackgroundTransparency = 1
+        iconLbl.Text = icon
+        iconLbl.TextSize = 12
+        iconLbl.Font = Enum.Font.GothamBold
+        iconLbl.Parent = rowFrame
+
+        local titleLbl = Instance.new("TextLabel")
+        titleLbl.Size = UDim2.new(0.5, 0, 1, 0)
+        titleLbl.Position = UDim2.new(0, 34, 0, 0)
+        titleLbl.BackgroundTransparency = 1
+        titleLbl.Text = title
+        titleLbl.TextColor3 = AppConfig.TextSecondary
+        titleLbl.TextSize = AppConfig.TextCaption
+        titleLbl.Font = Enum.Font.GothamMedium
+        titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+        titleLbl.Parent = rowFrame
+
+        local valueLbl = Instance.new("TextLabel")
+        valueLbl.Size = UDim2.new(0.5, -10, 1, 0)
+        valueLbl.Position = UDim2.new(0.5, 0, 0, 0)
+        valueLbl.BackgroundTransparency = 1
+        valueLbl.Text = "--"
+        valueLbl.TextColor3 = valueColor or AppConfig.TextPrimary
+        valueLbl.TextSize = AppConfig.TextBody
+        valueLbl.Font = Enum.Font.GothamBold
+        valueLbl.TextXAlignment = Enum.TextXAlignment.Right
+        valueLbl.Parent = rowFrame
+
+        return valueLbl
+    end
+
+    local TmCurrentTimeValue = makeStatRow(SsInner, 6,  "🕐", "Current Time",    AppConfig.AccentBlue)
+    local TmSessionTimeValue = makeStatRow(SsInner, 32, "⏳", "Session Uptime",  AppConfig.AccentGreen)
+    local TmStartTimeValue   = makeStatRow(SsInner, 58, "📅", "Session Started", AppConfig.TextSecondary)
+    local TmEggsPerMinValue  = makeStatRow(SsInner, 84, "🥚", "Eggs / Minute",   AppConfig.AccentGold)
+
+    TmStartTimeValue.Text = os.date("%H:%M:%S", StateStore.sessionStartTime)
+
+    -- Totals card
+    local TotalsCard = Instance.new("Frame")
+    TotalsCard.Size = UDim2.new(1, -4, 0, 96)
+    TotalsCard.LayoutOrder = 4
+    TotalsCard.BackgroundColor3 = AppConfig.NestedCardBg
+    TotalsCard.Parent = TimeScroll
+    UIComponent.applyCard(TotalsCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+    local TcTitle = Instance.new("TextLabel")
+    TcTitle.Size = UDim2.new(1, -20, 0, 20)
+    TcTitle.Position = UDim2.new(0, 14, 0, 8)
+    TcTitle.BackgroundTransparency = 1
+    TcTitle.Text = "🥚  Total Collected This Session"
+    TcTitle.TextColor3 = AppConfig.TextPrimary
+    TcTitle.TextSize = AppConfig.TextHeader
+    TcTitle.Font = Enum.Font.GothamBold
+    TcTitle.TextXAlignment = Enum.TextXAlignment.Left
+    TcTitle.Parent = TotalsCard
+
+    local TotalCountLabel = Instance.new("TextLabel")
+    TotalCountLabel.Name = "TotalCountLabel"
+    TotalCountLabel.Size = UDim2.new(0.5, -20, 0, 46)
+    TotalCountLabel.Position = UDim2.new(0, 10, 0, 36)
+    TotalCountLabel.BackgroundTransparency = 1
+    TotalCountLabel.Text = "0"
+    TotalCountLabel.TextColor3 = AppConfig.AccentGold
+    TotalCountLabel.TextSize = 34
+    TotalCountLabel.Font = Enum.Font.GothamBold
+    TotalCountLabel.TextXAlignment = Enum.TextXAlignment.Center
+    TotalCountLabel.Parent = TotalsCard
+
+    local TotalCaptionLabel = Instance.new("TextLabel")
+    TotalCaptionLabel.Size = UDim2.new(0.5, -20, 0, 46)
+    TotalCaptionLabel.Position = UDim2.new(0.5, 10, 0, 36)
+    TotalCaptionLabel.BackgroundTransparency = 1
+    TotalCaptionLabel.Text = "0 rare collected"
+    TotalCaptionLabel.TextColor3 = AppConfig.TextSecondary
+    TotalCaptionLabel.TextSize = AppConfig.TextBody
+    TotalCaptionLabel.Font = Enum.Font.GothamMedium
+    TotalCaptionLabel.TextXAlignment = Enum.TextXAlignment.Center
+    TotalCaptionLabel.Parent = TotalsCard
+
+    -- Controls card
+    local TimeControlsCard = Instance.new("Frame")
+    TimeControlsCard.Size = UDim2.new(1, -4, 0, 76)
+    TimeControlsCard.LayoutOrder = 5
+    TimeControlsCard.BackgroundColor3 = AppConfig.NestedCardBg
+    TimeControlsCard.Parent = TimeScroll
+    UIComponent.applyCard(TimeControlsCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+    local TctTitle = Instance.new("TextLabel")
+    TctTitle.Size = UDim2.new(1, -20, 0, 20)
+    TctTitle.Position = UDim2.new(0, 14, 0, 8)
+    TctTitle.BackgroundTransparency = 1
+    TctTitle.Text = "Session Controls"
+    TctTitle.TextColor3 = AppConfig.TextPrimary
+    TctTitle.TextSize = AppConfig.TextHeader
+    TctTitle.Font = Enum.Font.GothamBold
+    TctTitle.TextXAlignment = Enum.TextXAlignment.Left
+    TctTitle.Parent = TimeControlsCard
+
+    local ResetSessionBtn = Instance.new("TextButton")
+    ResetSessionBtn.Size = UDim2.new(0.5, -18, 0, 30)
+    ResetSessionBtn.Position = UDim2.new(0, 10, 0, 36)
+    ResetSessionBtn.BackgroundColor3 = AppConfig.RecessedBg
+    ResetSessionBtn.Text = "🔄 Reset Session Timer"
+    ResetSessionBtn.TextColor3 = AppConfig.AccentGreen
+    ResetSessionBtn.TextSize = AppConfig.TextCaption
+    ResetSessionBtn.Font = Enum.Font.GothamBold
+    ResetSessionBtn.Parent = TimeControlsCard
+    UIComponent.styleButton(ResetSessionBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
+
+    local ResetCountsBtn = Instance.new("TextButton")
+    ResetCountsBtn.Size = UDim2.new(0.5, -18, 0, 30)
+    ResetCountsBtn.Position = UDim2.new(0.5, 8, 0, 36)
+    ResetCountsBtn.BackgroundColor3 = AppConfig.RecessedBg
+    ResetCountsBtn.Text = "🧹 Reset Egg Counters"
+    ResetCountsBtn.TextColor3 = AppConfig.AccentRed
+    ResetCountsBtn.TextSize = AppConfig.TextCaption
+    ResetCountsBtn.Font = Enum.Font.GothamBold
+    ResetCountsBtn.Parent = TimeControlsCard
+    UIComponent.styleButton(ResetCountsBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
+
+    local function refreshTimeLabels()
+        local now = os.time()
+        local elapsed = now - StateStore.sessionStartTime
+        local h = math.floor(elapsed / 3600)
+        local m = math.floor((elapsed % 3600) / 60)
+        local s = elapsed % 60
+
+        TmCurrentTimeValue.Text = os.date("%H:%M:%S")
+        TmSessionTimeValue.Text = string.format("%02d:%02d:%02d", h, m, s)
+
+        local epm = (elapsed > 0) and string.format("%.1f", StateStore.totalEggsCollected / (elapsed / 60)) or "0.0"
+        TmEggsPerMinValue.Text = epm .. " eggs/min"
+
+        if BigClockLabel and BigClockLabel.Parent then
+            BigClockLabel.Text = os.date("%H:%M:%S")
         end
-
-        local allItems = Utils.getBackpackItems()
-        local query = (StateStore.backpackSearchQuery or ""):lower():match("^%s*(.-)%s*$")
-        local filteredItems = {}
-
-        if query and #query > 0 then
-            for _, it in ipairs(allItems) do
-                if string.find(it.name:lower(), query, 1, true) then
-                    table.insert(filteredItems, it)
-                end
+        if BigDateLabel and BigDateLabel.Parent then
+            BigDateLabel.Text = os.date("%A, %B %d, %Y")
+        end
+        if TotalCountLabel and TotalCountLabel.Parent then
+            TotalCountLabel.Text = tostring(StateStore.totalEggsCollected)
+        end
+        if TotalCaptionLabel and TotalCaptionLabel.Parent then
+            local rareCount = 0
+            for _, rec in ipairs(StateStore.farmHistory) do
+                if rec.isRare then rareCount = rareCount + 1 end
             end
-        else
-            filteredItems = allItems
+            TotalCaptionLabel.Text = rareCount .. " rare collected"
         end
-
-        BackpackCountBadge.Text = string.format("🎒 Items: (%d)", #allItems)
-
-        if #filteredItems == 0 then
-            local emptyLabel = Instance.new("TextLabel")
-            emptyLabel.Size = UDim2.new(1, 0, 0, 40)
-            emptyLabel.BackgroundTransparency = 1
-            emptyLabel.Text = (#allItems == 0) and "Backpack is empty / ไม่มีไอเทม" or "No matching items"
-            emptyLabel.TextColor3 = AppConfig.TextMuted
-            emptyLabel.TextSize = AppConfig.TextBody
-            emptyLabel.Font = Enum.Font.GothamMedium
-            emptyLabel.Parent = BackpackScroll
-            return
-        end
-
-        for _, item in ipairs(filteredItems) do
-            local card = Instance.new("Frame")
-            card.Size = UDim2.new(1, -4, 0, 36)
-            card.BackgroundColor3 = item.isEquipped and Color3.fromRGB(22, 34, 28) or AppConfig.RecessedBg
-            card.Parent = BackpackScroll
-            UIComponent.applyCard(card, AppConfig.RadiusMD, card.BackgroundColor3, item.isEquipped and AppConfig.AccentGreen or AppConfig.BorderInner)
-
-            if item.textureId and #item.textureId > 0 then
-                local icon = Instance.new("ImageLabel")
-                icon.Size = UDim2.new(0, 22, 0, 22)
-                icon.Position = UDim2.new(0, 8, 0.5, -11)
-                icon.BackgroundTransparency = 1
-                icon.Image = item.textureId
-                icon.ScaleType = Enum.ScaleType.Fit
-                icon.Parent = card
-            else
-                local iconFallback = Instance.new("TextLabel")
-                iconFallback.Size = UDim2.new(0, 22, 0, 22)
-                iconFallback.Position = UDim2.new(0, 8, 0.5, -11)
-                iconFallback.BackgroundTransparency = 1
-                iconFallback.Text = item.isEquipped and "⚔️" or "📦"
-                iconFallback.TextSize = 12
-                iconFallback.Font = Enum.Font.GothamBold
-                iconFallback.Parent = card
-            end
-
-            local nameLabel = Instance.new("TextLabel")
-            nameLabel.Size = UDim2.new(1, -160, 1, 0)
-            nameLabel.Position = UDim2.new(0, 36, 0, 0)
-            nameLabel.BackgroundTransparency = 1
-            nameLabel.Text = item.name
-            nameLabel.TextColor3 = item.isEquipped and AppConfig.AccentGreen or AppConfig.TextPrimary
-            nameLabel.TextSize = AppConfig.TextBody
-            nameLabel.Font = Enum.Font.GothamBold
-            nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-            nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
-            nameLabel.Parent = card
-
-            local tagLabel = Instance.new("TextLabel")
-            tagLabel.Size = UDim2.new(0, 56, 0, 20)
-            tagLabel.Position = UDim2.new(1, -124, 0.5, -10)
-            tagLabel.BackgroundColor3 = item.isEquipped and Color3.fromRGB(20, 48, 30) or AppConfig.NestedCardBg
-            tagLabel.Text = item.isEquipped and "Equipped" or "In Bag"
-            tagLabel.TextColor3 = item.isEquipped and AppConfig.AccentGreen or AppConfig.TextMuted
-            tagLabel.TextSize = AppConfig.TextMicro
-            tagLabel.Font = Enum.Font.GothamMedium
-            tagLabel.Parent = card
-
-            local tc = Instance.new("UICorner")
-            tc.CornerRadius = UDim.new(0, 4)
-            tc.Parent = tagLabel
-
-            local actBtn = Instance.new("TextButton")
-            actBtn.Size = UDim2.new(0, 60, 0, 24)
-            actBtn.Position = UDim2.new(1, -64, 0.5, -12)
-            local actBg = item.isEquipped and AppConfig.NestedCardBg or AppConfig.AccentGreen
-            actBtn.BackgroundColor3 = actBg
-            actBtn.Text = item.isEquipped and "Unequip" or "Equip"
-            actBtn.TextColor3 = item.isEquipped and AppConfig.TextSecondary or Color3.fromRGB(10, 20, 15)
-            actBtn.TextSize = AppConfig.TextCaption
-            actBtn.Font = Enum.Font.GothamBold
-            actBtn.Parent = card
-            UIComponent.styleButton(actBtn, AppConfig.RadiusSM, actBg)
-
-            actBtn.MouseButton1Click:Connect(function()
-                if item.isEquipped then Utils.unequipTool(item.instance)
-                else Utils.equipTool(item.instance) end
-                task.wait(0.08)
-                updateBackpackUI()
-            end)
+        if ClockLabel and ClockLabel.Parent then
+            ClockLabel.Text = os.date("%H:%M:%S")
         end
     end
+    StateStore.onTimeUpdated = refreshTimeLabels
+    refreshTimeLabels()
 
-    BackpackSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-        local newQuery = BackpackSearchBox.Text:match("^%s*(.-)%s*$") or ""
-        BpClearSearchBtn.Visible = (#newQuery > 0)
-        if newQuery == StateStore.backpackSearchQuery then return end
-        StateStore.backpackSearchQuery = newQuery
-        updateBackpackUI()
+    ResetSessionBtn.MouseButton1Click:Connect(function()
+        StateStore.sessionStartTime = os.time()
+        TmStartTimeValue.Text = os.date("%H:%M:%S", StateStore.sessionStartTime)
+        refreshTimeLabels()
+        updateStatus("Session timer reset", AppConfig.AccentGreen)
     end)
 
-    BpClearSearchBtn.MouseButton1Click:Connect(function()
-        BackpackSearchBox.Text = ""
-        StateStore.backpackSearchQuery = ""
-        BpClearSearchBtn.Visible = false
-        updateBackpackUI()
+    ResetCountsBtn.MouseButton1Click:Connect(function()
+        StateStore.totalEggsCollected = 0
+        refreshTimeLabels()
+        updateStatus("Egg counters reset", AppConfig.AccentRed)
     end)
-
-    PrintBackpackBtn.MouseButton1Click:Connect(function()
-        Utils.printBackpack()
-        updateStatus("Backpack dumped to console", AppConfig.AccentBlue)
-    end)
-
-    local backpackConnAdded, backpackConnRemoved
-    local charConnAdded, charConnRemoved
-
-    local function bindBackpackListeners()
-        if backpackConnAdded then backpackConnAdded:Disconnect() end
-        if backpackConnRemoved then backpackConnRemoved:Disconnect() end
-        local bp = Utils.getBackpack()
-        if bp then
-            backpackConnAdded = StateStore.track(bp.ChildAdded:Connect(function()
-                if currentActiveTab == "Backpack" then updateBackpackUI() end
-            end))
-            backpackConnRemoved = StateStore.track(bp.ChildRemoved:Connect(function()
-                if currentActiveTab == "Backpack" then updateBackpackUI() end
-            end))
-        end
-    end
-
-    local function bindCharBackpackListeners(char)
-        if charConnAdded then charConnAdded:Disconnect() end
-        if charConnRemoved then charConnRemoved:Disconnect() end
-        if char then
-            charConnAdded = StateStore.track(char.ChildAdded:Connect(function(child)
-                if child:IsA("Tool") and currentActiveTab == "Backpack" then updateBackpackUI() end
-            end))
-            charConnRemoved = StateStore.track(char.ChildRemoved:Connect(function(child)
-                if child:IsA("Tool") and currentActiveTab == "Backpack" then updateBackpackUI() end
-            end))
-        end
-        bindBackpackListeners()
-    end
-
-    bindCharBackpackListeners(Utils.getCharacter())
-    StateStore.track(ServiceManager.LocalPlayer.CharacterAdded:Connect(bindCharBackpackListeners))
 
     -- ══════════════════════════════════════════════════════════════
     -- [TAB 4] HISTORY
@@ -3173,99 +3134,9 @@ function UIComponent.mount()
         KeybindBtn.TextColor3 = AppConfig.AccentGreen
     end)
 
-    local TimeCard = Instance.new("Frame")
-    TimeCard.Size = UDim2.new(1, -4, 0, 170)
-    TimeCard.LayoutOrder = 3
-    TimeCard.BackgroundColor3 = AppConfig.NestedCardBg
-    TimeCard.Parent = SettingsScroll
-    UIComponent.applyCard(TimeCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.AccentBlue, 0.55)
-
-    local TimeCardTitle = Instance.new("TextLabel")
-    TimeCardTitle.Size = UDim2.new(1, -20, 0, 22)
-    TimeCardTitle.Position = UDim2.new(0, 14, 0, 8)
-    TimeCardTitle.BackgroundTransparency = 1
-    TimeCardTitle.Text = "⏱️  Time & Session Monitor"
-    TimeCardTitle.TextColor3 = AppConfig.AccentBlue
-    TimeCardTitle.TextSize = AppConfig.TextHeader
-    TimeCardTitle.Font = Enum.Font.GothamBold
-    TimeCardTitle.TextXAlignment = Enum.TextXAlignment.Left
-    TimeCardTitle.Parent = TimeCard
-
-    local TimeInnerCard = Instance.new("Frame")
-    TimeInnerCard.Size = UDim2.new(1, -20, 0, 122)
-    TimeInnerCard.Position = UDim2.new(0, 10, 0, 38)
-    TimeInnerCard.BackgroundColor3 = AppConfig.RecessedBg
-    TimeInnerCard.Parent = TimeCard
-    UIComponent.applyCard(TimeInnerCard, AppConfig.RadiusLG, AppConfig.RecessedBg, AppConfig.BorderInner)
-
-    local function makeTimeRow(parent, yPos, icon, title, valueColor)
-        local rowFrame = Instance.new("Frame")
-        rowFrame.Size = UDim2.new(1, 0, 0, 28)
-        rowFrame.Position = UDim2.new(0, 0, 0, yPos)
-        rowFrame.BackgroundTransparency = 1
-        rowFrame.Parent = parent
-
-        local iconLbl = Instance.new("TextLabel")
-        iconLbl.Size = UDim2.new(0, 24, 1, 0)
-        iconLbl.Position = UDim2.new(0, 10, 0, 0)
-        iconLbl.BackgroundTransparency = 1
-        iconLbl.Text = icon
-        iconLbl.TextSize = 12
-        iconLbl.Font = Enum.Font.GothamBold
-        iconLbl.Parent = rowFrame
-
-        local titleLbl = Instance.new("TextLabel")
-        titleLbl.Size = UDim2.new(0.45, 0, 1, 0)
-        titleLbl.Position = UDim2.new(0, 34, 0, 0)
-        titleLbl.BackgroundTransparency = 1
-        titleLbl.Text = title
-        titleLbl.TextColor3 = AppConfig.TextSecondary
-        titleLbl.TextSize = AppConfig.TextCaption
-        titleLbl.Font = Enum.Font.GothamMedium
-        titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-        titleLbl.Parent = rowFrame
-
-        local valueLbl = Instance.new("TextLabel")
-        valueLbl.Size = UDim2.new(0.5, -10, 1, 0)
-        valueLbl.Position = UDim2.new(0.5, 0, 0, 0)
-        valueLbl.BackgroundTransparency = 1
-        valueLbl.Text = "--"
-        valueLbl.TextColor3 = valueColor or AppConfig.TextPrimary
-        valueLbl.TextSize = AppConfig.TextBody
-        valueLbl.Font = Enum.Font.GothamBold
-        valueLbl.TextXAlignment = Enum.TextXAlignment.Right
-        valueLbl.Parent = rowFrame
-
-        return valueLbl
-    end
-
-    local TmCurrentTimeValue = makeTimeRow(TimeInnerCard, 6,  "🕐", "Current Time",   AppConfig.AccentBlue)
-    local TmSessionTimeValue = makeTimeRow(TimeInnerCard, 34, "⏳", "Session Uptime",  AppConfig.AccentGreen)
-    local TmStartTimeValue   = makeTimeRow(TimeInnerCard, 62, "📅", "Session Started", AppConfig.TextSecondary)
-    local TmEggsPerMinValue  = makeTimeRow(TimeInnerCard, 90, "🥚", "Eggs / Minute",  AppConfig.AccentGold)
-
-    TmStartTimeValue.Text = os.date("%H:%M:%S", StateStore.sessionStartTime)
-
-    local function refreshTimeLabels()
-        local now = os.time()
-        local elapsed = now - StateStore.sessionStartTime
-        local h = math.floor(elapsed / 3600)
-        local m = math.floor((elapsed % 3600) / 60)
-        local s = elapsed % 60
-        TmCurrentTimeValue.Text = os.date("%H:%M:%S")
-        TmSessionTimeValue.Text = string.format("%02d:%02d:%02d", h, m, s)
-        local epm = (elapsed > 0) and string.format("%.1f", StateStore.totalEggsCollected / (elapsed / 60)) or "0.0"
-        TmEggsPerMinValue.Text = epm .. " eggs/min"
-        if ClockLabel and ClockLabel.Parent then
-            ClockLabel.Text = os.date("%H:%M:%S")
-        end
-    end
-    StateStore.onTimeUpdated = refreshTimeLabels
-    refreshTimeLabels()
-
     local PlotCard = Instance.new("Frame")
     PlotCard.Size = UDim2.new(1, -4, 0, 76)
-    PlotCard.LayoutOrder = 4
+    PlotCard.LayoutOrder = 3
     PlotCard.BackgroundColor3 = AppConfig.NestedCardBg
     PlotCard.Parent = SettingsScroll
     UIComponent.applyCard(PlotCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
@@ -3532,14 +3403,12 @@ function UIComponent.mount()
     task.defer(function()
         populateList()
         updateLiveEggsSummary()
-        updateBackpackUI()
         updateHistoryUI()
     end)
 
     return {
         populateList = populateList,
         updateLiveEggsSummary = updateLiveEggsSummary,
-        updateBackpackUI = updateBackpackUI,
         showRareAlert = showRareAlert,
         ScreenGui = ScreenGui,
     }
