@@ -1,30 +1,5 @@
---[[
-    ═══════════════════════════════════════════════════════════════════════════════
-    EGGS ESP MENU & AUTOFARM PRO — v2.2.0 (ESP Enhancement Release)
-    SIDEBAR TABS • NESTED CARD ARCHITECTURE • STRICT DARK THEME
-    ═══════════════════════════════════════════════════════════════════════════════
-
-    CHANGELOG v2.2.0:
-      • Added egg weight display (kg/g/lb) with 4-tier resolver
-      • Added distance unit toggle (studs/m/ft)
-      • Added compass bearing (N/NE/E/SE/S/SW/W/NW)
-      • Added ESP style modes (Fill / Outline / Both)
-      • Added max render distance slider (50-2000 studs)
-      • Added rare-only filter
-      • Added 3 billboard layout modes (Minimal / Compact / Detailed)
-      • Added rarity tier system with emoji prefix + tier coloring
-      • Added egg pin/lock (📌 button + right-click)
-      • Added sort-by-weight mode
-      • Added ESP Display Settings card
-      • All v2.1.0 bug fixes retained
-    ═══════════════════════════════════════════════════════════════════════════════
-]]
-
---==================================================
--- [1] COMPONENT: AppConfig
---==================================================
 local AppConfig = {
-    Version = "2.2.0",
+    Version = "2.1.0",
 
     ESPFillTransparency = 0.45,
     ESPOutlineTransparency = 0.1,
@@ -40,27 +15,6 @@ local AppConfig = {
         Color3.fromRGB(255, 100, 100), Color3.fromRGB( 60, 255, 220),
     },
     ESPRareColor = Color3.fromRGB(255, 215, 0),
-
-    -- [v2.2.0] ESP Enhancement Tokens
-    ESPWeightUnit = "kg",
-    ESPDistanceUnit = "studs",
-    ESPESPStyle = "Both",
-    ESPMaxRenderDistance = 500,
-    ESPShowWeight = true,
-    ESPShowDistance = true,
-    ESPShowCompass = false,
-    ESPShowRarityTag = true,
-    ESPBillboardLayout = "Detailed",
-    ESPRareOnly = false,
-    ESPClickToLock = true,
-
-    RarityTiers = {
-        { keywords = { "secret", "titan" },             label = "SECRET",    color = Color3.fromRGB(255, 61, 87),   prefix = "🔥" },
-        { keywords = { "huge", "exclusive" },           label = "EXCLUSIVE", color = Color3.fromRGB(255, 215, 0),   prefix = "⭐" },
-        { keywords = { "mythic", "cherub" },            label = "MYTHIC",    color = Color3.fromRGB(220, 90, 255),  prefix = "💎" },
-        { keywords = { "golden", "diamond", "rainbow" }, label = "RARE",     color = Color3.fromRGB(0, 230, 118),   prefix = "✨" },
-        { keywords = { "dark", "celestial" },           label = "SPECIAL",   color = Color3.fromRGB(140, 100, 255), prefix = "🌙" },
-    },
 
     TPHeight = 3,
     MovementSpeed = 500,
@@ -202,20 +156,6 @@ local StateStore = {
     _sliderCounter = 0,
     windowMode = "PC",
     screenGui = nil,
-
-    -- [v2.2.0] ESP Enhancement State
-    espStyle = "Both",
-    espMaxRenderDistance = 500,
-    espWeightUnit = "kg",
-    espDistanceUnit = "studs",
-    espBillboardLayout = "Detailed",
-    espRareOnly = false,
-    espShowWeight = true,
-    espShowDistance = true,
-    espShowCompass = false,
-    espShowRarityTag = true,
-    pinnedEggs = setmetatable({}, { __mode = "k" }),
-    sortByWeight = false,
 }
 
 function StateStore.track(conn)
@@ -375,94 +315,6 @@ function Utils.resetVelocity(root)
         root.Velocity = Vector3.zero
         root.RotVelocity = Vector3.zero
     end)
-end
-
--- [v2.2.0] Weight extraction — 4-tier resolver
-function Utils.getEggWeight(egg)
-    if not egg then return nil end
-
-    -- 1. Direct attribute
-    local w = egg:GetAttribute("Weight") or egg:GetAttribute("weight") or egg:GetAttribute("Mass")
-    if type(w) == "number" and w > 0 then return w end
-
-    -- 2. Child value scan
-    for _, child in ipairs(egg:GetChildren()) do
-        if (child:IsA("NumberValue") or child:IsA("StringValue"))
-            and (child.Name:lower():find("weight") or child.Name:lower():find("mass")) then
-            local num = tonumber(child.Value)
-            if num and num > 0 then return num end
-        end
-    end
-
-    -- 3. Parse from name
-    local name = egg.Name
-    local num = name:match("(%d+%.?%d*)%s*kg")
-        or name:match("(%d+%.?%d*)%s*g")
-        or name:match("(%d+%.?%d*)%s*lb")
-    if num then
-        local n = tonumber(num)
-        if n then
-            if name:lower():find(num .. "g") and not name:lower():find(num .. "kg") then
-                return n / 1000
-            end
-            return n
-        end
-    end
-
-    -- 4. Deterministic hash fallback (0.5 – 45.5 kg)
-    local hash = 0
-    for i = 1, #egg.Name do
-        hash = (hash + string.byte(egg.Name, i) * (i * 7)) % 100000
-    end
-    return (hash % 4500) / 100 + 0.5
-end
-
-function Utils.formatWeight(kg, unit)
-    if not kg then return "?" end
-    unit = unit or StateStore.espWeightUnit or "kg"
-    if unit == "g" then
-        return string.format("%.0fg", kg * 1000)
-    elseif unit == "lb" then
-        return string.format("%.1flb", kg * 2.20462)
-    end
-    if kg < 1 then
-        return string.format("%.0fg", kg * 1000)
-    end
-    return string.format("%.1fkg", kg)
-end
-
-function Utils.formatDistance(studs, unit)
-    if studs == math.huge then return "?" end
-    unit = unit or StateStore.espDistanceUnit or "studs"
-    if unit == "m" then
-        return string.format("%.0fm", studs * 0.28)
-    elseif unit == "ft" then
-        return string.format("%.0fft", studs * 0.92)
-    end
-    return string.format("%dst", math.floor(studs + 0.5))
-end
-
-function Utils.getCompassBearing(fromPos, toPos)
-    if not fromPos or not toPos then return "" end
-    local dir = (toPos - fromPos)
-    local flat = Vector3.new(dir.X, 0, dir.Z)
-    if flat.Magnitude < 0.01 then return "" end
-    local angle = math.deg(math.atan2(flat.X, flat.Z))
-    local dirs = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" }
-    local idx = math.floor(((angle + 22.5) % 360) / 45) + 1
-    return dirs[idx] or "N"
-end
-
-function Utils.getEggRarity(eggName)
-    local lower = eggName:lower()
-    for _, tier in ipairs(AppConfig.RarityTiers) do
-        for _, kw in ipairs(tier.keywords) do
-            if string.find(lower, kw, 1, true) then
-                return tier.label, tier.color, tier.prefix
-            end
-        end
-    end
-    return nil, nil, nil
 end
 
 function Utils.getBackpack()
@@ -868,13 +720,15 @@ function PlotComponent.teleportAndDeposit()
 end
 
 --==================================================
--- [9] COMPONENT: ESPComponent (v2.2.0 Enhanced)
+-- [9] COMPONENT: ESPComponent
 --==================================================
 local ESPComponent = {}
 
 function ESPComponent.getColor(eggName)
-    local _, tierColor = Utils.getEggRarity(eggName)
-    if tierColor then return tierColor end
+    local lower = eggName:lower()
+    for _, kw in ipairs(AppConfig.RareKeywords) do
+        if string.find(lower, kw, 1, true) then return AppConfig.ESPRareColor end
+    end
     local hash = 0
     for i = 1, #eggName do hash = hash + string.byte(eggName, i) * (i + 1) end
     local palette = AppConfig.ESPPalette
@@ -883,98 +737,41 @@ end
 
 function ESPComponent.createBillboard(egg)
     local data = StateStore.eggData[egg]
-    if not data then return end
-    if data.NameBillboard and data.NameBillboard.Parent then
-        data.NameBillboard:Destroy()
-    end
-
-    local layout = StateStore.espBillboardLayout or "Detailed"
-    local height
-    if layout == "Minimal" then height = 24
-    elseif layout == "Compact" then height = 42
-    else height = 68 end
-
+    if not data or (data.NameBillboard and data.NameBillboard.Parent) then return end
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "EggESP_Info"
-    billboard.Size = UDim2.new(0, 200, 0, height)
+    billboard.Size = UDim2.new(0, 180, 0, 42)
     billboard.StudsOffset = Vector3.new(0, 3.5, 0)
     billboard.AlwaysOnTop = true
-    billboard.MaxDistance = StateStore.espMaxRenderDistance or AppConfig.ESPMaxRenderDistance
+    billboard.MaxDistance = 2500
     billboard.Enabled = false
     billboard.Parent = egg
 
     local eggColor = ESPComponent.getColor(egg.Name)
-    local rarityLabel, rarityColor, rarityPrefix = Utils.getEggRarity(egg.Name)
-
-    local y = 0
-
-    if StateStore.espShowRarityTag and rarityLabel and layout ~= "Minimal" then
-        local tag = Instance.new("TextLabel")
-        tag.Name = "RarityTag"
-        tag.Size = UDim2.new(1, 0, 0, 14)
-        tag.Position = UDim2.new(0, 0, 0, y)
-        tag.BackgroundTransparency = 1
-        tag.Text = string.format("%s %s", rarityPrefix or "", rarityLabel)
-        tag.TextColor3 = rarityColor or eggColor
-        tag.TextStrokeTransparency = 0.3
-        tag.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-        tag.TextSize = 9
-        tag.Font = Enum.Font.GothamBold
-        tag.Parent = billboard
-        y = y + 14
-    end
-
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Name = "EggName"
-    nameLabel.Size = UDim2.new(1, 0, 0, layout == "Minimal" and 24 or 18)
-    nameLabel.Position = UDim2.new(0, 0, 0, y)
+    nameLabel.Size = UDim2.new(1, 0, 0, 20)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Text = egg.Name
     nameLabel.TextColor3 = eggColor
     nameLabel.TextStrokeTransparency = 0.2
     nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    nameLabel.TextSize = layout == "Minimal" and 13 or AppConfig.ESPNameSize
+    nameLabel.TextSize = AppConfig.ESPNameSize
     nameLabel.Font = Enum.Font.GothamBold
     nameLabel.Parent = billboard
-    y = y + (layout == "Minimal" and 24 or 18)
 
-    if layout == "Minimal" then
-        data.NameBillboard = billboard
-        return
-    end
-
-    if StateStore.espShowWeight then
-        local wLabel = Instance.new("TextLabel")
-        wLabel.Name = "Weight"
-        wLabel.Size = UDim2.new(1, 0, 0, 14)
-        wLabel.Position = UDim2.new(0, 0, 0, y)
-        wLabel.BackgroundTransparency = 1
-        local kg = Utils.getEggWeight(egg)
-        wLabel.Text = "⚖️ " .. Utils.formatWeight(kg)
-        wLabel.TextColor3 = AppConfig.AccentGold
-        wLabel.TextStrokeTransparency = 0.35
-        wLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-        wLabel.TextSize = 10
-        wLabel.Font = Enum.Font.GothamMedium
-        wLabel.Parent = billboard
-        y = y + 14
-    end
-
-    if StateStore.espShowDistance then
-        local dLabel = Instance.new("TextLabel")
-        dLabel.Name = "Distance"
-        dLabel.Size = UDim2.new(1, 0, 0, 14)
-        dLabel.Position = UDim2.new(0, 0, 0, y)
-        dLabel.BackgroundTransparency = 1
-        dLabel.Text = "0"
-        dLabel.TextColor3 = Color3.fromRGB(220, 225, 235)
-        dLabel.TextStrokeTransparency = 0.4
-        dLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-        dLabel.TextSize = 10
-        dLabel.Font = Enum.Font.GothamMedium
-        dLabel.Parent = billboard
-    end
-
+    local distLabel = Instance.new("TextLabel")
+    distLabel.Name = "Distance"
+    distLabel.Size = UDim2.new(1, 0, 0, 16)
+    distLabel.Position = UDim2.new(0, 0, 0, 19)
+    distLabel.BackgroundTransparency = 1
+    distLabel.Text = "0 studs"
+    distLabel.TextColor3 = Color3.fromRGB(220, 225, 235)
+    distLabel.TextStrokeTransparency = 0.4
+    distLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    distLabel.TextSize = AppConfig.ESPDistanceSize
+    distLabel.Font = Enum.Font.GothamMedium
+    distLabel.Parent = billboard
     data.NameBillboard = billboard
 end
 
@@ -982,56 +779,17 @@ function ESPComponent.updateBillboard(egg)
     local data = StateStore.eggData[egg]
     if not data or not data.NameBillboard or not data.NameBillboard.Parent then return end
     local billboard = data.NameBillboard
-
     local nameLabel = billboard:FindFirstChild("EggName")
+    local distLabel = billboard:FindFirstChild("Distance")
     if nameLabel then nameLabel.Text = egg.Name end
-
-    local wLabel = billboard:FindFirstChild("Weight")
-    if wLabel then
-        wLabel.Text = "⚖️ " .. Utils.formatWeight(Utils.getEggWeight(egg))
-    end
-
-    local dLabel = billboard:FindFirstChild("Distance")
-    if dLabel then
+    if distLabel then
         local d = Utils.getDistanceToTarget(egg)
-        local distStr = Utils.formatDistance(d)
-        if StateStore.espShowCompass then
-            local root = Utils.getRootPart()
-            local targetPos = Utils.getTargetPosition(egg)
-            local bearing = (root and targetPos) and Utils.getCompassBearing(root.Position, targetPos) or ""
-            dLabel.Text = string.format("%s  %s", distStr, bearing)
-        else
-            dLabel.Text = distStr
-        end
+        distLabel.Text = (d == math.huge) and "?" or string.format("%d studs", math.floor(d + 0.5))
     end
 end
 
 function ESPComponent.updateEgg(egg)
     if not Utils.isValidEgg(egg) then return end
-
-    local isPinned = StateStore.pinnedEggs[egg]
-
-    if StateStore.espRareOnly and not isPinned and not Utils.isRareEgg(egg.Name) then
-        local data = StateStore.eggData[egg]
-        if data then
-            if data.Highlight then data.Highlight.Enabled = false end
-            if data.NameBillboard then data.NameBillboard.Enabled = false end
-        end
-        return
-    end
-
-    local dist = Utils.getDistanceToTarget(egg)
-    local maxDist = StateStore.espMaxRenderDistance or AppConfig.ESPMaxRenderDistance
-    local inRange = (dist == math.huge) or (dist <= maxDist)
-    if not inRange and not isPinned then
-        local data = StateStore.eggData[egg]
-        if data then
-            if data.Highlight then data.Highlight.Enabled = false end
-            if data.NameBillboard then data.NameBillboard.Enabled = false end
-        end
-        return
-    end
-
     if not StateStore.eggData[egg] then
         StateStore.eggData[egg] = {
             Highlight = nil, NameBillboard = nil,
@@ -1041,37 +799,24 @@ function ESPComponent.updateEgg(egg)
     end
     local data = StateStore.eggData[egg]
     local eggColor = ESPComponent.getColor(egg.Name)
-    local shouldShow = data.CustomActive or isPinned or StateStore.mainESPActive
-    local color = (data.CustomActive or isPinned) and (data.CustomColor or eggColor) or eggColor
+    local shouldShow = data.CustomActive or StateStore.mainESPActive
+    local color = data.CustomActive and (data.CustomColor or eggColor) or eggColor
 
     if shouldShow then
         if not data.Highlight or not data.Highlight.Parent then
             local highlight = Instance.new("Highlight")
             highlight.Name = "EggESP_Highlight"
             highlight.Adornee = egg
+            highlight.FillTransparency = AppConfig.ESPFillTransparency
+            highlight.OutlineTransparency = AppConfig.ESPOutlineTransparency
             highlight.Parent = egg
             data.Highlight = highlight
         end
-
-        local style = StateStore.espStyle or AppConfig.ESPESPStyle
-        if style == "Fill" then
-            data.Highlight.FillTransparency = AppConfig.ESPFillTransparency
-            data.Highlight.OutlineTransparency = 1
-        elseif style == "Outline" then
-            data.Highlight.FillTransparency = 1
-            data.Highlight.OutlineTransparency = AppConfig.ESPOutlineTransparency
-        else
-            data.Highlight.FillTransparency = AppConfig.ESPFillTransparency
-            data.Highlight.OutlineTransparency = AppConfig.ESPOutlineTransparency
-        end
-
         data.Highlight.FillColor = color
         data.Highlight.OutlineColor = color
         data.Highlight.Enabled = true
-
         ESPComponent.createBillboard(egg)
         if data.NameBillboard then
-            data.NameBillboard.MaxDistance = maxDist
             data.NameBillboard.Enabled = true
             ESPComponent.updateBillboard(egg)
         end
@@ -1096,7 +841,6 @@ function ESPComponent.removeEgg(egg)
     end
     StateStore.autoFarmProcessed[egg] = nil
     StateStore.eggCooldowns[egg] = nil
-    StateStore.pinnedEggs[egg] = nil
 end
 
 function ESPComponent.bindEggLifecycle(egg)
@@ -1107,37 +851,6 @@ function ESPComponent.bindEggLifecycle(egg)
         if conn then pcall(function() conn:Disconnect() end) end
     end)
     StateStore.track(conn)
-end
-
--- [v2.2.0] Pin toggle
-function ESPComponent.togglePin(egg)
-    if not egg then return end
-    if StateStore.pinnedEggs[egg] then
-        StateStore.pinnedEggs[egg] = nil
-    else
-        StateStore.pinnedEggs[egg] = true
-    end
-    ESPComponent.updateEgg(egg)
-end
-
--- [v2.2.0] Rebuild all billboards (settings change)
-function ESPComponent.refreshAllBillboards()
-    for egg, data in pairs(StateStore.eggData) do
-        if egg and egg.Parent and data.NameBillboard then
-            data.NameBillboard:Destroy()
-            data.NameBillboard = nil
-        end
-    end
-    ESPComponent.updateAll()
-end
-
--- [v2.2.0] Re-evaluate all eggs (filter/distance/style change)
-function ESPComponent.reapplySettings()
-    local folder = ServiceManager.RenderedEggsFolder
-    if not folder then return end
-    for _, egg in ipairs(folder:GetChildren()) do
-        ESPComponent.updateEgg(egg)
-    end
 end
 
 --==================================================
@@ -1581,6 +1294,7 @@ function UIComponent.styleInput(textBox, customRadius)
     end)
 end
 
+-- Shared slider drag dispatcher
 local activeSliders = {}
 ServiceManager.UserInputService.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
@@ -1760,12 +1474,14 @@ function UIComponent.mount()
     ScreenGui.Parent = ServiceManager.TargetParent
     StateStore.screenGui = ScreenGui
 
+    -- Cleanup callbacks on destroy
     ScreenGui.Destroying:Connect(function()
         StateStore.onHistoryUpdated = nil
         StateStore.onTimeUpdated = nil
         StateStore.screenGui = nil
     end)
 
+    -- Alert Stack
     local AlertStack = Instance.new("Frame")
     AlertStack.Name = "AlertStack"
     AlertStack.Size = UDim2.new(0, 320, 0, 260)
@@ -1778,7 +1494,9 @@ function UIComponent.mount()
     AlertLayout.Padding = UDim.new(0, 8)
     AlertLayout.Parent = AlertStack
 
-    -- DEVICE SELECTION MODAL
+    -- ══════════════════════════════════════════════════════════════
+    -- DEVICE SELECTION
+    -- ══════════════════════════════════════════════════════════════
     local DeviceFrame = Instance.new("Frame")
     DeviceFrame.Name = "DeviceSelectionFrame"
     DeviceFrame.Size = UDim2.new(0, 340, 0, 170)
@@ -1838,7 +1556,9 @@ function UIComponent.mount()
     MobileBtn.Parent = DeviceInner
     UIComponent.styleButton(MobileBtn, AppConfig.RadiusLG, AppConfig.NestedCardBg)
 
+    -- ══════════════════════════════════════════════════════════════
     -- MAIN WINDOW
+    -- ══════════════════════════════════════════════════════════════
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, AppConfig.PCWidth, 0, AppConfig.PCHeight)
@@ -1852,6 +1572,7 @@ function UIComponent.mount()
     MainFrame.Parent = ScreenGui
     UIComponent.applyCard(MainFrame, AppConfig.Radius2XL, AppConfig.BgColor, AppConfig.CardBorder)
 
+    -- TopBar
     local TopBar = Instance.new("Frame")
     TopBar.Name = "TopBar"
     TopBar.Size = UDim2.new(1, 0, 0, 46)
@@ -1967,7 +1688,9 @@ function UIComponent.mount()
     MinimizeBtn.Parent = TopBar
     UIComponent.styleButton(MinimizeBtn, AppConfig.RadiusMD, AppConfig.OuterCardBg)
 
+    -- ══════════════════════════════════════════════════════════════
     -- SIDEBAR
+    -- ══════════════════════════════════════════════════════════════
     local Sidebar = Instance.new("Frame")
     Sidebar.Name = "Sidebar"
     Sidebar.Size = UDim2.new(0, AppConfig.SidebarWidth, 1, -58)
@@ -2018,7 +1741,9 @@ function UIComponent.mount()
     FootMobile.Parent = SidebarFooter
     UIComponent.styleButton(FootMobile, AppConfig.RadiusSM, AppConfig.OuterCardBg)
 
+    -- ══════════════════════════════════════════════════════════════
     -- CONTENT AREA
+    -- ══════════════════════════════════════════════════════════════
     local ContentArea = Instance.new("Frame")
     ContentArea.Name = "ContentArea"
     ContentArea.Size = UDim2.new(1, -(AppConfig.SidebarWidth + 20), 1, -58)
@@ -2039,6 +1764,7 @@ function UIComponent.mount()
     local tabPanels = {}
     local currentActiveTab = "Eggs"
 
+    -- Size helper (declared early so minimize/keybind can use it)
     local function currentSize()
         if StateStore.windowMode == "PC" then
             return AppConfig.PCWidth, AppConfig.PCHeight
@@ -2193,7 +1919,9 @@ function UIComponent.mount()
     local updateBackpackUI
     local updateHistoryUI
 
+    -- ══════════════════════════════════════════════════════════════
     -- [TAB 1] EGGS
+    -- ══════════════════════════════════════════════════════════════
     local EggsPanel = tabPanels["Eggs"]
 
     local LiveChipsCard = Instance.new("Frame")
@@ -2364,15 +2092,6 @@ function UIComponent.mount()
         ItemFrame.Parent = ScrollList
         UIComponent.applyCard(ItemFrame, AppConfig.RadiusLG, AppConfig.RecessedBg, AppConfig.BorderInner)
 
-        ItemFrame.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton2 and AppConfig.ESPClickToLock then
-                ESPComponent.togglePin(egg)
-                local nowPinned = StateStore.pinnedEggs[egg]
-                updateStatus(nowPinned and ("Pinned: " .. egg.Name) or ("Unpinned: " .. egg.Name),
-                             nowPinned and AppConfig.AccentGold or AppConfig.TextSecondary)
-            end
-        end)
-
         local eggIcon = Instance.new("ImageLabel")
         eggIcon.Size = UDim2.new(0, itemHeight - 10, 0, itemHeight - 10)
         eggIcon.Position = UDim2.new(0, 8, 0.5, -(itemHeight - 10) / 2)
@@ -2382,7 +2101,7 @@ function UIComponent.mount()
         eggIcon.Parent = ItemFrame
 
         local nameLabel = Instance.new("TextLabel")
-        nameLabel.Size = UDim2.new(1, -300, 1, 0)
+        nameLabel.Size = UDim2.new(1, -240, 1, 0)
         nameLabel.Position = UDim2.new(0, itemHeight + 8, 0, 0)
         nameLabel.BackgroundTransparency = 1
         nameLabel.Text = egg.Name
@@ -2392,23 +2111,6 @@ function UIComponent.mount()
         nameLabel.TextXAlignment = Enum.TextXAlignment.Left
         nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
         nameLabel.Parent = ItemFrame
-
-        -- Weight badge
-        local weightBadge = Instance.new("Frame")
-        weightBadge.Size = UDim2.new(0, 60, 0, 20)
-        weightBadge.Position = UDim2.new(1, -284, 0.5, -10)
-        weightBadge.BackgroundColor3 = Color3.fromRGB(36, 30, 20)
-        weightBadge.Parent = ItemFrame
-        UIComponent.applyCard(weightBadge, AppConfig.RadiusSM, Color3.fromRGB(36, 30, 20), AppConfig.AccentGold, 0.6)
-
-        local weightLabel = Instance.new("TextLabel")
-        weightLabel.Size = UDim2.new(1, 0, 1, 0)
-        weightLabel.BackgroundTransparency = 1
-        weightLabel.TextColor3 = AppConfig.AccentGold
-        weightLabel.TextSize = AppConfig.TextCaption
-        weightLabel.Font = Enum.Font.GothamBold
-        weightLabel.Text = "⚖️ " .. Utils.formatWeight(Utils.getEggWeight(egg))
-        weightLabel.Parent = weightBadge
 
         local distBadge = Instance.new("Frame")
         distBadge.Size = UDim2.new(0, 50, 0, 20)
@@ -2424,7 +2126,7 @@ function UIComponent.mount()
         distLabel.TextSize = AppConfig.TextCaption
         distLabel.Font = Enum.Font.Gotham
         local dist = Utils.getDistanceToTarget(egg)
-        distLabel.Text = Utils.formatDistance(dist)
+        distLabel.Text = (dist ~= math.huge) and string.format("%dst", math.floor(dist + 0.5)) or "--"
         distLabel.Parent = distBadge
 
         local TPBtn = Instance.new("TextButton")
@@ -2535,6 +2237,7 @@ function UIComponent.mount()
         local savedPos = ScrollList.CanvasPosition
         local folder = ServiceManager.RenderedEggsFolder
 
+        -- Always update the count label
         if not folder then
             EggCountLabel.Text = "0/0"
             for egg, row in pairs(renderedEggRows) do
@@ -2549,25 +2252,11 @@ function UIComponent.mount()
             if Utils.isValidEgg(egg) then table.insert(found, egg) end
         end
 
-        -- Primary sort
-        if StateStore.sortByWeight then
-            table.sort(found, function(a, b)
-                local wa = Utils.getEggWeight(a) or 0
-                local wb = Utils.getEggWeight(b) or 0
-                return wa > wb
-            end)
-        elseif StateStore.sortMode == "Distance" then
+        if StateStore.sortMode == "Distance" then
             table.sort(found, function(a, b) return Utils.getDistanceToTarget(a) < Utils.getDistanceToTarget(b) end)
         else
             table.sort(found, function(a, b) return a.Name:lower() < b.Name:lower() end)
         end
-
-        -- Pinned eggs always first
-        table.sort(found, function(a, b)
-            local pa = StateStore.pinnedEggs[a] and 1 or 0
-            local pb = StateStore.pinnedEggs[b] and 1 or 0
-            return pa > pb
-        end)
 
         local query = StateStore.currentSearchQuery:lower()
         local visible = {}
@@ -2735,15 +2424,9 @@ function UIComponent.mount()
     SortBtn.MouseButton1Click:Connect(function()
         if StateStore.sortMode == "Name" then
             StateStore.sortMode = "Distance"
-            StateStore.sortByWeight = false
             SortBtn.Text = "Sort: Dist"
-        elseif StateStore.sortMode == "Distance" then
-            StateStore.sortMode = "Name"
-            StateStore.sortByWeight = true
-            SortBtn.Text = "Sort: Weight"
         else
             StateStore.sortMode = "Name"
-            StateStore.sortByWeight = false
             SortBtn.Text = "Sort: Name"
         end
         populateList()
@@ -2766,7 +2449,9 @@ function UIComponent.mount()
         populateList()
     end)
 
+    -- ══════════════════════════════════════════════════════════════
     -- [TAB 2] AUTOMATION
+    -- ══════════════════════════════════════════════════════════════
     local FarmPanel = tabPanels["Farm"]
 
     local FarmScroll = Instance.new("ScrollingFrame")
@@ -3015,61 +2700,9 @@ function UIComponent.mount()
         end
     end)
 
-    -- [v2.2.0] ESP DISPLAY SETTINGS CARD
-    local ESPSettingsCard = Instance.new("Frame")
-    ESPSettingsCard.Size = UDim2.new(1, -4, 0, 316)
-    ESPSettingsCard.LayoutOrder = 7
-    ESPSettingsCard.BackgroundColor3 = AppConfig.NestedCardBg
-    ESPSettingsCard.Parent = FarmScroll
-    UIComponent.applyCard(ESPSettingsCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
-
-    local EspTitle = Instance.new("TextLabel")
-    EspTitle.Size = UDim2.new(1, -20, 0, 20)
-    EspTitle.Position = UDim2.new(0, 14, 0, 8)
-    EspTitle.BackgroundTransparency = 1
-    EspTitle.Text = "👁️  ESP Display Settings"
-    EspTitle.TextColor3 = AppConfig.TextPrimary
-    EspTitle.TextSize = AppConfig.TextHeader
-    EspTitle.Font = Enum.Font.GothamBold
-    EspTitle.TextXAlignment = Enum.TextXAlignment.Left
-    EspTitle.Parent = ESPSettingsCard
-
-    local showWeightToggle = UIComponent.createToggle(ESPSettingsCard, "Show Weight (kg)", "แสดงน้ำหนักไข่บนบิลบอร์ด", StateStore.espShowWeight, function(v)
-        StateStore.espShowWeight = v
-        ESPComponent.refreshAllBillboards()
-    end)
-    showWeightToggle.Position = UDim2.new(0, 4, 0, 32)
-    showWeightToggle.Size = UDim2.new(1, -8, 0, 48)
-
-    local showDistToggle = UIComponent.createToggle(ESPSettingsCard, "Show Distance + Compass", "แสดงระยะทางและทิศทาง", StateStore.espShowDistance, function(v)
-        StateStore.espShowDistance = v
-        ESPComponent.refreshAllBillboards()
-    end)
-    showDistToggle.Position = UDim2.new(0, 4, 0, 84)
-    showDistToggle.Size = UDim2.new(1, -8, 0, 48)
-
-    local rareOnlyToggle = UIComponent.createToggle(ESPSettingsCard, "Rare Eggs Only", "แสดงเฉพาะไข่หายาก", StateStore.espRareOnly, function(v)
-        StateStore.espRareOnly = v
-        ESPComponent.reapplySettings()
-    end)
-    rareOnlyToggle.Position = UDim2.new(0, 4, 0, 136)
-    rareOnlyToggle.Size = UDim2.new(1, -8, 0, 48)
-
-    local compassToggle = UIComponent.createToggle(ESPSettingsCard, "Show Compass Bearing", "แสดงทิศทาง (N/NE/E/...)", StateStore.espShowCompass, function(v)
-        StateStore.espShowCompass = v
-        ESPComponent.refreshAllBillboards()
-    end)
-    compassToggle.Position = UDim2.new(0, 4, 0, 188)
-    compassToggle.Size = UDim2.new(1, -8, 0, 48)
-
-    local maxDistSlider = UIComponent.createSlider(ESPSettingsCard, "Max ESP Render Distance", 50, 2000, StateStore.espMaxRenderDistance, "studs", function(v)
-        StateStore.espMaxRenderDistance = v
-        ESPComponent.reapplySettings()
-    end)
-    maxDistSlider.Position = UDim2.new(0, 4, 0, 240)
-    maxDistSlider.Size = UDim2.new(1, -8, 0, 60)
-
+    -- ══════════════════════════════════════════════════════════════
     -- [TAB 3] BACKPACK
+    -- ══════════════════════════════════════════════════════════════
     local BackpackPanel = tabPanels["Backpack"]
 
     local BpToolbarCard = Instance.new("Frame")
@@ -3318,7 +2951,9 @@ function UIComponent.mount()
     bindCharBackpackListeners(Utils.getCharacter())
     StateStore.track(ServiceManager.LocalPlayer.CharacterAdded:Connect(bindCharBackpackListeners))
 
+    -- ══════════════════════════════════════════════════════════════
     -- [TAB 4] HISTORY
+    -- ══════════════════════════════════════════════════════════════
     local HistoryPanel = tabPanels["History"]
 
     local HistToolbarCard = Instance.new("Frame")
@@ -3440,7 +3075,9 @@ function UIComponent.mount()
         updateStatus("Farm history cleared", AppConfig.AccentRed)
     end)
 
+    -- ══════════════════════════════════════════════════════════════
     -- [TAB 5] SETTINGS
+    -- ══════════════════════════════════════════════════════════════
     local SettingsPanel = tabPanels["Settings"]
 
     local SettingsScroll = Instance.new("ScrollingFrame")
@@ -3666,7 +3303,9 @@ function UIComponent.mount()
         end
     end)
 
+    -- ══════════════════════════════════════════════════════════════
     -- RARE EGG ALERTS
+    -- ══════════════════════════════════════════════════════════════
     local function showRareAlert(egg)
         if not StateStore.shouldAlert(egg.Name) then return end
 
@@ -3729,8 +3368,7 @@ function UIComponent.mount()
         distLabel.Position = UDim2.new(0, 56, 0, 40)
         distLabel.BackgroundTransparency = 1
         local d = Utils.getDistanceToTarget(egg)
-        local kg = Utils.getEggWeight(egg)
-        distLabel.Text = string.format("📍 %s away • ⚖️ %s", Utils.formatDistance(d), Utils.formatWeight(kg))
+        distLabel.Text = (d ~= math.huge) and string.format("📍 %dst away", math.floor(d + 0.5)) or "📍 Unknown"
         distLabel.TextColor3 = AppConfig.TextSecondary
         distLabel.TextSize = AppConfig.TextCaption
         distLabel.Font = Enum.Font.GothamMedium
@@ -3767,7 +3405,9 @@ function UIComponent.mount()
         end)
     end
 
+    -- ══════════════════════════════════════════════════════════════
     -- DRAGGABLE
+    -- ══════════════════════════════════════════════════════════════
     local dragging = false
     local dragStart = nil
     local startPos = nil
@@ -3799,7 +3439,7 @@ function UIComponent.mount()
         end
     end))
 
-    -- KEYBIND HANDLER
+    -- Keybind handler
     StateStore.track(ServiceManager.UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if StateStore.listeningForKey then
             if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -3813,11 +3453,13 @@ function UIComponent.mount()
         end
         if gameProcessed then return end
 
+        -- Escape: minimize
         if input.KeyCode == Enum.KeyCode.Escape then
             if not StateStore.isMinimized then toggleMinimize() end
             return
         end
 
+        -- Comma / Period: cycle tabs
         if input.KeyCode == Enum.KeyCode.Period then
             local ids = {}
             for _, t in ipairs(Tabs) do table.insert(ids, t.id) end
@@ -3833,12 +3475,15 @@ function UIComponent.mount()
             return
         end
 
+        -- Teleport home
         if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == StateStore.tpKeybind then
             PlotComponent.teleportAndDeposit()
         end
     end))
 
+    -- ══════════════════════════════════════════════════════════════
     -- DEVICE MODE
+    -- ══════════════════════════════════════════════════════════════
     local function applyMode(mode)
         StateStore.windowMode = mode
         StateStore.isMobileMode = (mode == "Mobile")
@@ -3865,7 +3510,9 @@ function UIComponent.mount()
         task.defer(function() applyMode("Mobile") end)
     end
 
+    -- ══════════════════════════════════════════════════════════════
     -- TIME HEARTBEAT
+    -- ══════════════════════════════════════════════════════════════
     local timeTick = 0
     StateStore.track(ServiceManager.RunService.Heartbeat:Connect(function(dt)
         if not (ScreenGui and ScreenGui.Parent) then return end
@@ -3881,6 +3528,7 @@ function UIComponent.mount()
         end
     end))
 
+    -- Initial populate
     task.defer(function()
         populateList()
         updateLiveEggsSummary()
@@ -4003,6 +3651,7 @@ local function startApplication()
     StabilityComponent.setupAntiAFK(true)
     StabilityComponent.setupAutoRejoin()
 
+    -- Merge into existing namespace
     local existing = getgenv().EggsESP or {}
     existing.Version = AppConfig.Version
     existing.Config = AppConfig
@@ -4020,14 +3669,11 @@ local function startApplication()
         StartAutoRebirth = RebirthComponent.startAutoRebirth,
         StopAutoRebirth = RebirthComponent.stopAutoRebirth,
         Cleanup = cleanup,
-        GetEggWeight = Utils.getEggWeight,
-        FormatWeight = Utils.formatWeight,
-        TogglePin = ESPComponent.togglePin,
-        RefreshBillboards = ESPComponent.refreshAllBillboards,
     }
     getgenv().EggsESP = existing
 
-    print("[Eggs ESP Pro v" .. AppConfig.Version .. "] Initialized with weight display, rarity tiers & pin system.")
+    print("[Eggs ESP Pro v" .. AppConfig.Version .. "] Initialized successfully.")
 end
 
+-- Run App
 startApplication()
