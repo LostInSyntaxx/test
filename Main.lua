@@ -17,7 +17,7 @@ local AppConfig = {
     ESPRareColor = Color3.fromRGB(255, 215, 0),
 
     TPHeight = 3,
-    MovementSpeed = 500,
+    MovementSpeed = 350,
     HomeDepositWait = 1.3,
     AntiStuckThreshold = 2.2,
 
