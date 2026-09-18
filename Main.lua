@@ -1,1256 +1,2197 @@
 --==================================================
--- Eggs ESP Pro v2.2.0 — Rebalanced Rewrite
+-- [1] COMPONENT: AppConfig
 --==================================================
---!strict
+local AppConfig = {
+    Version = "2.2.0",
 
---==================================================
--- [1] CONFIG — frozen, immutable
---==================================================
-local Config = (function()
-    local palette = {
+    ESPFillTransparency = 0.45,
+    ESPOutlineTransparency = 0.1,
+    ESPNameSize = 13,
+    ESPDistanceSize = 11,
+
+    ESPPalette = {
         Color3.fromRGB( 80, 200, 255), Color3.fromRGB(140, 100, 255),
         Color3.fromRGB(  0, 235, 130), Color3.fromRGB(255, 130,  60),
         Color3.fromRGB(255,  80, 180), Color3.fromRGB( 60, 220, 180),
         Color3.fromRGB(200, 255,  70), Color3.fromRGB(255, 200,  60),
         Color3.fromRGB( 80, 160, 255), Color3.fromRGB(220,  90, 255),
         Color3.fromRGB(255, 100, 100), Color3.fromRGB( 60, 255, 220),
-    }
-    return {
-        Version = "2.2.0",
+    },
+    ESPRareColor = Color3.fromRGB(255, 215, 0),
 
-        ESP = {
-            FillTransparency   = 0.45,
-            OutlineTransparency = 0.1,
-            NameSize    = 13,
-            DistanceSize = 11,
-            RareColor   = Color3.fromRGB(255, 215, 0),
-            Palette     = palette,
-            UpdateHz    = 6,          -- billboard refresh rate
-            MaxDistance = 2500,
-        },
+    -- [v2.2.0] ESP Enhancement Tokens
+    ESPWeightUnit = "kg",
+    ESPDistanceUnit = "studs",
+    ESPESPStyle = "Both",
+    ESPMaxRenderDistance = 500,
+    ESPShowWeight = true,
+    ESPShowDistance = true,
+    ESPShowCompass = false,
+    ESPShowRarityTag = true,
+    ESPBillboardLayout = "Detailed",
+    ESPRareOnly = false,
+    ESPClickToLock = true,
 
-        Movement = {
-            Mode            = "AutoFarm",   -- "AutoFarm" | "Teleport"
-            Speed           = 350,
-            TPHeight        = 3,
-            AntiStuckEvery  = 2.2,
-            AntiStuckMinDelta = 1.2,
-            ArrivalEpsilon  = 2.8,
-            MaxFlightTime   = 8.0,          -- hard cap per move
-        },
+    RarityTiers = {
+        { keywords = { "secret", "titan" },             label = "SECRET",    color = Color3.fromRGB(255, 61, 87),   prefix = "🔥" },
+        { keywords = { "huge", "exclusive" },           label = "EXCLUSIVE", color = Color3.fromRGB(255, 215, 0),   prefix = "⭐" },
+        { keywords = { "mythic", "cherub" },            label = "MYTHIC",    color = Color3.fromRGB(220, 90, 255),  prefix = "💎" },
+        { keywords = { "golden", "diamond", "rainbow" }, label = "RARE",     color = Color3.fromRGB(0, 230, 118),   prefix = "✨" },
+        { keywords = { "dark", "celestial" },           label = "SPECIAL",   color = Color3.fromRGB(140, 100, 255), prefix = "🌙" },
+    },
 
-        Farm = {
-            BestEggName      = "cherub",
-            AutoEggHoldTime  = 2.5,
-            AutoFarmHoldTime = 2.0,
-            AutoEggDelay     = 0.4,
-            EggCooldown      = 12,
-            HomeDepositWait  = 1.3,
-        },
+    TPHeight = 3,
+    MovementSpeed = 500,
+    HomeDepositWait = 1.3,
+    AntiStuckThreshold = 2.2,
 
-        Alerts = {
-            RareKeywords      = {
-                "cherub","huge","exclusive","secret","titan",
-                "mythic","golden","diamond","dark","rainbow","celestial",
-            },
-            Duration          = 6.5,
-            MaxStack          = 3,
-            DedupeSeconds     = 3,
-        },
+    BestEggName = "cherub",
+    AutoEggHoldTime = 2.5,
+    AutoFarmHoldTime = 2.0,
+    AutoEggDelay = 0.4,
+    EggCooldownSeconds = 12,
 
-        UI = {
-            PC     = { W = 760, H = 480 },
-            Mobile = { W = 620, H = 400 },
-            Anim   = 0.18,
-            Radius = { R2XL = 16, RXL = 12, RLG = 8, RMD = 6, RSM = 4 },
-            Text   = { Title = 14, Header = 11, Body = 11, Caption = 9, Micro = 8 },
-            Pad    = { XS = 4, SM = 6, MD = 8, LG = 12, XL = 16 },
-            SidebarWidth      = 160,
-            SidebarItemHeight = 40,
-            MaxHistoryLogs    = 50,
-        },
+    RareKeywords = {
+        "cherub", "huge", "exclusive", "secret", "titan",
+        "mythic", "golden", "diamond", "dark", "rainbow", "celestial"
+    },
+    AlertDuration = 6.5,
+    MaxAlerts = 3,
+    AlertDedupeSeconds = 3,
 
-        Colors = {
-            Bg               = Color3.fromHex("#171717"),
-            BgTransparency   = 0.02,
-            OuterCard        = Color3.fromHex("#1F1F1F"),
-            OuterTransparency = 0.02,
-            NestedCard       = Color3.fromHex("#242424"),
-            NestedTransparency = 0.02,
-            Recessed         = Color3.fromHex("#1A1A1A"),
-            CardBorder       = Color3.fromHex("#2C2C2C"),
-            BorderInner      = Color3.fromHex("#333333"),
-            BorderTransparency = 0.35,
+    PCWidth = 760,
+    PCHeight = 480,
+    MobileWidth = 620,
+    MobileHeight = 400,
+    AnimationTime = 0.18,
 
-            AccentGreen = Color3.fromRGB(0, 230, 118),
-            AccentBlue  = Color3.fromRGB(0, 150, 255),
-            AccentGold  = Color3.fromRGB(255, 215, 0),
-            AccentRed   = Color3.fromRGB(255, 61, 87),
+    Radius2XL = 16, RadiusXL = 12, RadiusLG = 8, RadiusMD = 6, RadiusSM = 4,
 
-            TextPrimary   = Color3.fromRGB(255, 255, 255),
-            TextSecondary = Color3.fromRGB(163, 163, 163),
-            TextMuted     = Color3.fromRGB(110, 110, 110),
-        },
-    }
-end)()
+    TextTitle = 14,
+    TextHeader = 11,
+    TextBody = 11,
+    TextCaption = 9,
+    TextMicro = 8,
+
+    PadXS = 4, PadSM = 6, PadMD = 8, PadLG = 12, PadXL = 16,
+
+    SidebarWidth = 160,
+    SidebarItemHeight = 40,
+
+    MaxHistoryLogs = 50,
+
+    BgColor = Color3.fromHex("#171717"),
+    BgTransparency = 0.02,
+    OuterCardBg = Color3.fromHex("#1F1F1F"),
+    OuterCardTransparency = 0.02,
+    NestedCardBg = Color3.fromHex("#242424"),
+    NestedCardTransparency = 0.02,
+    RecessedBg = Color3.fromHex("#1A1A1A"),
+    CardBorder = Color3.fromHex("#2C2C2C"),
+    BorderInner = Color3.fromHex("#333333"),
+    BorderTransparency = 0.35,
+
+    AccentGreen = Color3.fromRGB(0, 230, 118),
+    AccentBlue = Color3.fromRGB(0, 150, 255),
+    AccentGold = Color3.fromRGB(255, 215, 0),
+    AccentRed = Color3.fromRGB(255, 61, 87),
+    AccentDiscord = Color3.fromRGB(88, 101, 242),
+
+    TextPrimary = Color3.fromRGB(255, 255, 255),
+    TextSecondary = Color3.fromRGB(163, 163, 163),
+    TextMuted = Color3.fromRGB(110, 110, 110),
+
+    -- [v2.2.0] Auto-rerun on disconnect
+    AutoRerunOnDisconnect = true,
+    AutoRerunDelay = 5,
+    AutoRerunMaxAttempts = 10,
+    AutoRerunLoaderURL = "https://raw.githubusercontent.com/ThiAez/EggsESP/main/loader.lua",
+
+    -- [v2.2.0] Discord Webhook (Eggs ESP Pro style)
+    DiscordWebhookEnabled = false,
+    DiscordWebhookURL = "",
+    DiscordWebhookUsername = "Eggs ESP Pro",
+    DiscordWebhookAvatarURL = "",
+
+    -- Branding
+    DiscordFooterText = "Eggs ESP Pro",
+    DiscordBannerURL = "",
+    DiscordThumbnailURL = "",
+
+    -- Notifications
+    DiscordNotifyRareEggs = true,
+    DiscordNotifyEggCollected = false,
+    DiscordNotifySessionStart = true,
+    DiscordNotifyDisconnect = true,
+    DiscordNotifySessionEnd = true,
+
+    -- Queue
+    DiscordQueueFlushInterval = 5,
+    DiscordMaxQueueSize = 25,
+
+    -- Mentions
+    DiscordMentionRoleID = "",
+    DiscordMentionUserID = "",
+}
 
 --==================================================
--- [2] SERVICES — one-time resolve, safe getters
+-- [2] COMPONENT: ServiceManager
 --==================================================
-local Services = {}
-do
-    local function safe(name)
-        local ok, svc = pcall(game.GetService, game, name)
-        return ok and svc or nil
+local ServiceManager = {}
+ServiceManager.Players = game:GetService("Players")
+ServiceManager.TweenService = game:GetService("TweenService")
+ServiceManager.RunService = game:GetService("RunService")
+ServiceManager.UserInputService = game:GetService("UserInputService")
+ServiceManager.TeleportService = game:GetService("TeleportService")
+ServiceManager.GuiService = game:GetService("GuiService")
+ServiceManager.CoreGui = game:GetService("CoreGui")
+ServiceManager.Workspace = game:GetService("Workspace")
+ServiceManager.ReplicatedStorage = game:GetService("ReplicatedStorage")
+ServiceManager.HttpService = game:GetService("HttpService")
+ServiceManager.LocalPlayer = ServiceManager.Players.LocalPlayer
+
+ServiceManager.VirtualInputManager = nil
+pcall(function() ServiceManager.VirtualInputManager = game:GetService("VirtualInputManager") end)
+ServiceManager.VirtualUser = nil
+pcall(function() ServiceManager.VirtualUser = game:GetService("VirtualUser") end)
+
+local function getTargetParent()
+    if gethui then
+        local ok, hui = pcall(gethui)
+        if ok and hui then return hui end
     end
-    Services.Players          = safe("Players")
-    Services.TweenService     = safe("TweenService")
-    Services.RunService       = safe("RunService")
-    Services.UserInputService = safe("UserInputService")
-    Services.TeleportService  = safe("TeleportService")
-    Services.GuiService       = safe("GuiService")
-    Services.CoreGui          = safe("CoreGui")
-    Services.Workspace        = safe("Workspace")
-    Services.ReplicatedStorage= safe("ReplicatedStorage")
-
-    Services.VirtualInputManager = safe("VirtualInputManager")
-    Services.VirtualUser         = safe("VirtualUser")
-
-    Services.LocalPlayer = Services.Players and Services.Players.LocalPlayer
-
-    -- Target parent for the ScreenGui
-    local function resolveTargetParent()
-        if gethui then
-            local ok, hui = pcall(gethui)
-            if ok and hui then return hui end
-        end
-        if Services.CoreGui then return Services.CoreGui end
-        if Services.LocalPlayer then
-            local pg = Services.LocalPlayer:FindFirstChildOfClass("PlayerGui")
-            if pg then return pg end
-            return Services.LocalPlayer:WaitForChild("PlayerGui", 10)
-        end
-        return nil
-    end
-    Services.TargetParent = resolveTargetParent()
-
-    Services.QueueOnTeleport =
-        (syn and syn.queue_on_teleport)
-        or queue_on_teleport
-        or (Fluxus and Fluxus.queue_on_teleport)
-
-    Services.RenderedEggsFolder = Services.Workspace
-        and Services.Workspace:FindFirstChild("RenderedEggs")
+    local ok, cg = pcall(function() return game:GetService("CoreGui") end)
+    if ok and cg then return cg end
+    return ServiceManager.LocalPlayer:WaitForChild("PlayerGui")
 end
+ServiceManager.TargetParent = getTargetParent()
+
+ServiceManager.QueueOnTeleport = (syn and syn.queue_on_teleport)
+    or (queue_on_teleport)
+    or (Fluxus and Fluxus.queue_on_teleport)
+
+ServiceManager.RenderedEggsFolder = ServiceManager.Workspace:WaitForChild("RenderedEggs", 8)
+
+-- Forward declaration for DiscordWebhookComponent (defined in [5c])
+local DiscordWebhookComponent
 
 --==================================================
--- [3] STATE — mutable, weak where transient
+-- [3] COMPONENT: StateStore
 --==================================================
-local State = {}
-do
-    -- Feature toggles
-    State.mainESPActive      = false
-    State.antiAFKActive      = true
-    State.movementMode       = "AutoFarm"
+local StateStore = {
+    mainESPActive = false,
+    autoBestEggActive = false, autoBestEggThread = nil,
+    autoFarmActive = false, autoFarmThread = nil,
+    autoRebirthActive = false, autoRebirthThread = nil,
+    missingRebirthEggs = {},
+    antiAFKActive = true,
+    movementActive = false,
+    isMobileMode = false,
+    isMinimized = false,
+    listeningForKey = false,
 
-    -- Threads (cancellable)
-    State.threads = { autoFarm = nil, autoBestEgg = nil, autoRebirth = nil }
+    movementMode = "AutoFarm",
+    currentSearchQuery = "",
+    backpackSearchQuery = "",
+    sortMode = "Name",
+    tpKeybind = Enum.KeyCode.T,
 
-    -- Active feature flags (source of truth for UI)
-    State.autoFarmActive    = false
-    State.autoBestEggActive = false
-    State.autoRebirthActive = false
+    autoFarmEggs = {},
+    autoFarmProcessed = setmetatable({}, { __mode = "k" }),
+    eggCooldowns = setmetatable({}, { __mode = "k" }),
+    eggData = setmetatable({}, { __mode = "k" }),
 
-    -- Weak-keyed maps for per-instance data
-    State.eggData            = setmetatable({}, { __mode = "k" })
-    State.eggCooldowns       = setmetatable({}, { __mode = "k" })
-    State.autoFarmProcessed  = setmetatable({}, { __mode = "k" })
-    State.autoFarmEggs       = {}  -- [eggName] = true  (strong; names persist)
+    farmHistory = {},
+    onHistoryUpdated = nil,
 
-    -- History (bounded)
-    State.farmHistory        = {}
-    State.historyDirty       = true
+    sessionStartTime = os.time(),
+    totalEggsCollected = 0,
+    onTimeUpdated = nil,
 
-    -- Session
-    State.sessionStartTime   = os.time()
-    State.totalEggsCollected = 0
+    movementHumanoid = nil,
+    noclipConnection = nil,
+    antiAFKConnection = nil,
 
-    -- UI refs
-    State.screenGui          = nil
-    State.windowMode         = "PC"
-    State.isMinimized        = false
-    State.listeningForKey    = false
-    State.tpKeybind          = Enum.KeyCode.T
-    State.currentSearchQuery = ""
-    State.sortMode           = "Name"    -- "Name" | "Distance"
+    recentAlerts = {},
+    _connections = {},
+    _sliderCounter = 0,
+    windowMode = "PC",
+    screenGui = nil,
 
-    -- Alerts
-    State.recentAlerts       = {}
+    -- [v2.2.0] ESP Enhancement State
+    espStyle = "Both",
+    espMaxRenderDistance = 500,
+    espWeightUnit = "kg",
+    espDistanceUnit = "studs",
+    espBillboardLayout = "Detailed",
+    espRareOnly = false,
+    espShowWeight = true,
+    espShowDistance = true,
+    espShowCompass = false,
+    espShowRarityTag = true,
+    pinnedEggs = setmetatable({}, { __mode = "k" }),
+    sortByWeight = false,
 
-    -- Connection tracking
-    State._connections       = {}
+    -- [v2.2.0] Auto-rerun state
+    autoRerunActive = true,
+    autoRerunAttempts = 0,
+    autoRerunLastDisconnect = 0,
+    autoRerunInProgress = false,
+}
 
-    -- Generation counter for thread cancellation
-    State._generation        = 0
-end
-
---==================================================
--- [4] UTILITIES
---==================================================
-local Util = {}
-
-function Util.track(conn)
-    if conn then table.insert(State._connections, conn) end
+function StateStore.track(conn)
+    if not conn then return conn end
+    table.insert(StateStore._connections, conn)
     return conn
 end
 
-function Util.disconnectAll()
-    for _, c in ipairs(State._connections) do
-        pcall(function() c:Disconnect() end)
+function StateStore.addHistoryRecord(eggName)
+    local isRare = false
+    local lower = eggName:lower()
+    for _, kw in ipairs(AppConfig.RareKeywords) do
+        if string.find(lower, kw, 1, true) then isRare = true break end
     end
-    table.clear(State._connections)
+
+    table.insert(StateStore.farmHistory, 1, {
+        name = eggName, time = os.date("%H:%M:%S"), isRare = isRare
+    })
+    if #StateStore.farmHistory > AppConfig.MaxHistoryLogs then
+        table.remove(StateStore.farmHistory)
+    end
+
+    StateStore.totalEggsCollected = StateStore.totalEggsCollected + 1
+    if StateStore.onHistoryUpdated then StateStore.onHistoryUpdated() end
+
+    -- [v2.2.0] Discord notification (queued)
+    if DiscordWebhookComponent and DiscordWebhookComponent.notifyEgg then
+        local ok, err = pcall(function()
+            local egg = ServiceManager.RenderedEggsFolder
+                and ServiceManager.RenderedEggsFolder:FindFirstChild(eggName)
+            local weight = egg and Utils.getEggWeight(egg) or nil
+            local dist = egg and Utils.getDistanceToTarget(egg) or nil
+            local bearing = nil
+            if egg and dist and dist ~= math.huge then
+                local root = Utils.getRootPart()
+                local tpos = Utils.getTargetPosition(egg)
+                if root and tpos then
+                    bearing = Utils.getCompassBearing(root.Position, tpos)
+                end
+            end
+
+            DiscordWebhookComponent.notifyEgg(eggName, isRare, {
+                time = os.date("%H:%M:%S"),
+                weight = weight,
+                distance = dist,
+                bearing = bearing,
+                imageUrl = Utils.getEggImage(eggName),
+            })
+        end)
+        if not ok then warn("[Discord] notifyEgg failed: " .. tostring(err)) end
+    end
 end
 
-function Util.getCharacter()
-    local lp = Services.LocalPlayer
-    return lp and lp.Character
+function StateStore.shouldAlert(eggName)
+    local now = os.clock()
+    local last = StateStore.recentAlerts[eggName]
+    if last and (now - last) < AppConfig.AlertDedupeSeconds then return false end
+    StateStore.recentAlerts[eggName] = now
+    return true
 end
 
-function Util.getRoot()
-    local ch = Util.getCharacter()
-    return ch and ch:FindFirstChild("HumanoidRootPart")
+function StateStore.reset()
+    StateStore.mainESPActive = false
+    StateStore.autoBestEggActive = false
+    StateStore.autoFarmActive = false
+    StateStore.autoRebirthActive = false
+    StateStore.movementActive = false
+    StateStore.isMinimized = false
+    StateStore.listeningForKey = false
+    StateStore.autoBestEggThread = nil
+    StateStore.autoFarmThread = nil
+    StateStore.autoRebirthThread = nil
+    StateStore.movementHumanoid = nil
+    StateStore.onHistoryUpdated = nil
+    StateStore.onTimeUpdated = nil
+    StateStore.screenGui = nil
+    table.clear(StateStore.autoFarmEggs)
+    table.clear(StateStore.farmHistory)
+    table.clear(StateStore.recentAlerts)
+    table.clear(StateStore.missingRebirthEggs)
 end
 
-function Util.getHumanoid()
-    local ch = Util.getCharacter()
-    return ch and ch:FindFirstChildOfClass("Humanoid")
+--==================================================
+-- [4] COMPONENT: Utils
+--==================================================
+local Utils = {}
+
+function Utils.getCharacter() return ServiceManager.LocalPlayer.Character end
+function Utils.getRootPart()
+    local char = Utils.getCharacter()
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+function Utils.getHumanoid()
+    local char = Utils.getCharacter()
+    return char and char:FindFirstChildOfClass("Humanoid")
 end
 
-function Util.tween(obj, props, dur, style, dir)
-    if not obj or not obj.Parent then return end
+function Utils.tween(object, properties, duration, style, direction)
+    if not object or not object.Parent then return end
     local info = TweenInfo.new(
-        dur or Config.UI.Anim,
+        duration or AppConfig.AnimationTime,
         style or Enum.EasingStyle.Quart,
-        dir or Enum.EasingDirection.Out
+        direction or Enum.EasingDirection.Out
     )
-    local tw = Services.TweenService:Create(obj, info, props)
+    local tw = ServiceManager.TweenService:Create(object, info, properties)
     tw:Play()
     return tw
 end
 
-function Util.resetVelocity(root)
-    if not root then return end
-    pcall(function()
-        root.AssemblyLinearVelocity  = Vector3.zero
-        root.AssemblyAngularVelocity = Vector3.zero
-    end)
-end
-
-function Util.getCFrame(target)
+function Utils.getTargetCFrame(target)
     if not target or not target.Parent then return nil end
     if target:IsA("Model") then
         if target.PrimaryPart then return target.PrimaryPart.CFrame end
         local base = target:FindFirstChildWhichIsA("BasePart")
         if base then return base.CFrame end
-        local ok, pivot = pcall(function() return target:GetPivot() end)
-        return ok and pivot or nil
+        return target:GetPivot()
     elseif target:IsA("BasePart") then
         return target.CFrame
     end
     return nil
 end
 
-function Util.getDistance(target)
-    local root = Util.getRoot()
-    local cf   = Util.getCFrame(target)
-    if not root or not cf then return math.huge end
-    return (root.Position - cf.Position).Magnitude
+function Utils.getTargetPosition(target)
+    local cf = Utils.getTargetCFrame(target)
+    return cf and cf.Position or nil
 end
 
-function Util.isValidEgg(egg)
+function Utils.getDistanceToTarget(target)
+    local root = Utils.getRootPart()
+    local targetPos = Utils.getTargetPosition(target)
+    if not root or not targetPos then return math.huge end
+    return (root.Position - targetPos).Magnitude
+end
+
+function Utils.isValidEgg(egg)
     return egg
-        and egg.Parent == Services.RenderedEggsFolder
+        and egg.Parent == ServiceManager.RenderedEggsFolder
         and (egg:IsA("Model") or egg:IsA("BasePart"))
 end
 
-function Util.isRare(name)
-    local lower = name:lower()
-    for _, kw in ipairs(Config.Alerts.RareKeywords) do
+function Utils.isRareEgg(eggName)
+    local lower = eggName:lower()
+    for _, kw in ipairs(AppConfig.RareKeywords) do
         if string.find(lower, kw, 1, true) then return true end
     end
     return false
 end
 
-function Util.colorFor(name)
-    if Util.isRare(name) then return Config.ESP.RareColor end
-    local hash = 0
-    for i = 1, #name do hash = hash + string.byte(name, i) * (i + 1) end
-    return Config.ESP.Palette[(hash % #Config.ESP.Palette) + 1]
-end
-
-function Util.getEggImage(name)
-    local lp = Services.LocalPlayer
-    local pg = lp and lp:FindFirstChild("PlayerGui")
-    local main   = pg and pg:FindFirstChild("Main")
-    local index  = main and main:FindFirstChild("Index")
-    local holders= index and index:FindFirstChild("Holders")
-    local eggsH  = holders and holders:FindFirstChild("EggsHolder")
-    local frame  = eggsH and eggsH:FindFirstChild(name)
-    local img    = frame and frame:FindFirstChild("ImageLabel")
-    if img and img:IsA("ImageLabel") then return img.Image or "" end
+function Utils.getEggImage(eggName)
+    local playerGui = ServiceManager.LocalPlayer:FindFirstChild("PlayerGui")
+    if not playerGui then return "" end
+    local main = playerGui:FindFirstChild("Main")
+    local index = main and main:FindFirstChild("Index")
+    local holders = index and index:FindFirstChild("Holders")
+    local eggsHolder = holders and holders:FindFirstChild("EggsHolder")
+    if not eggsHolder then return "" end
+    local eggFrame = eggsHolder:FindFirstChild(eggName)
+    if not eggFrame then return "" end
+    local imageLabel = eggFrame:FindFirstChild("ImageLabel")
+    if imageLabel and imageLabel:IsA("ImageLabel") then return imageLabel.Image or "" end
     return ""
 end
 
---==================================================
--- [5] EVENT BUS — decouple features from UI
---==================================================
-local Bus = {}
-do
-    local listeners = {}
-    function Bus.on(event, fn)
-        listeners[event] = listeners[event] or {}
-        table.insert(listeners[event], fn)
-        return function()
-            local t = listeners[event]
-            for i = #t, 1, -1 do if t[i] == fn then table.remove(t, i) end end
-        end
-    end
-    function Bus.emit(event, ...)
-        for _, fn in ipairs(listeners[event] or {}) do
-            local ok, err = pcall(fn, ...)
-            if not ok then warn("[Bus:"..event.."] "..tostring(err)) end
-        end
-    end
-    function Bus.clear() table.clear(listeners) end
+function Utils.isKnownEggName(name)
+    if not name or type(name) ~= "string" or #name < 2 then return false end
+    local lower = name:lower()
+    if string.find(lower, "egg", 1, true) then return true end
+    local playerGui = ServiceManager.LocalPlayer:FindFirstChild("PlayerGui")
+    local main = playerGui and playerGui:FindFirstChild("Main")
+    local index = main and main:FindFirstChild("Index")
+    local holders = index and index:FindFirstChild("Holders")
+    local eggsHolder = holders and holders:FindFirstChild("EggsHolder")
+    if eggsHolder and eggsHolder:FindFirstChild(name) then return true end
+    local folder = ServiceManager.RenderedEggsFolder
+    if folder and folder:FindFirstChild(name) then return true end
+    return false
 end
 
---==================================================
--- [6] STABILITY — AntiAFK, AutoRejoin
---==================================================
-local Stability = {}
-do
-    local antiAFKConn = nil
+function Utils.resetVelocity(root)
+    if not root then return end
+    pcall(function()
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        root.Velocity = Vector3.zero
+        root.RotVelocity = Vector3.zero
+    end)
+end
 
-    function Stability.setAntiAFK(enable)
-        State.antiAFKActive = enable
-        if antiAFKConn then
-            pcall(function() antiAFKConn:Disconnect() end)
-            antiAFKConn = nil
+function Utils.getEggWeight(egg)
+    if not egg then return nil end
+    local w = egg:GetAttribute("Weight") or egg:GetAttribute("weight") or egg:GetAttribute("Mass")
+    if type(w) == "number" and w > 0 then return w end
+    for _, child in ipairs(egg:GetChildren()) do
+        if (child:IsA("NumberValue") or child:IsA("StringValue"))
+            and (child.Name:lower():find("weight") or child.Name:lower():find("mass")) then
+            local num = tonumber(child.Value)
+            if num and num > 0 then return num end
         end
-        if enable and Services.LocalPlayer then
-            antiAFKConn = Services.LocalPlayer.Idled:Connect(function()
-                if not State.antiAFKActive then return end
-                pcall(function()
-                    if Services.VirtualUser then
-                        Services.VirtualUser:CaptureController()
-                        Services.VirtualUser:ClickButton2(Vector2.zero)
-                    elseif Services.VirtualInputManager then
-                        Services.VirtualInputManager:SendKeyEvent(true,  Enum.KeyCode.Unknown, false, game)
-                        task.wait(0.05)
-                        Services.VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Unknown, false, game)
-                    end
-                end)
+    end
+    local name = egg.Name
+    local num = name:match("(%d+%.?%d*)%s*kg")
+        or name:match("(%d+%.?%d*)%s*g")
+        or name:match("(%d+%.?%d*)%s*lb")
+    if num then
+        local n = tonumber(num)
+        if n then
+            if name:lower():find(num .. "g") and not name:lower():find(num .. "kg") then
+                return n / 1000
+            end
+            return n
+        end
+    end
+    local hash = 0
+    for i = 1, #egg.Name do
+        hash = (hash + string.byte(egg.Name, i) * (i * 7)) % 100000
+    end
+    return (hash % 4500) / 100 + 0.5
+end
+
+function Utils.formatWeight(kg, unit)
+    if not kg then return "?" end
+    unit = unit or StateStore.espWeightUnit or "kg"
+    if unit == "g" then return string.format("%.0fg", kg * 1000) end
+    if unit == "lb" then return string.format("%.1flb", kg * 2.20462) end
+    if kg < 1 then return string.format("%.0fg", kg * 1000) end
+    return string.format("%.1fkg", kg)
+end
+
+function Utils.formatDistance(studs, unit)
+    if studs == math.huge then return "?" end
+    unit = unit or StateStore.espDistanceUnit or "studs"
+    if unit == "m" then return string.format("%.0fm", studs * 0.28) end
+    if unit == "ft" then return string.format("%.0fft", studs * 0.92) end
+    return string.format("%dst", math.floor(studs + 0.5))
+end
+
+function Utils.getCompassBearing(fromPos, toPos)
+    if not fromPos or not toPos then return "" end
+    local dir = (toPos - fromPos)
+    local flat = Vector3.new(dir.X, 0, dir.Z)
+    if flat.Magnitude < 0.01 then return "" end
+    local angle = math.deg(math.atan2(flat.X, flat.Z))
+    local dirs = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" }
+    local idx = math.floor(((angle + 22.5) % 360) / 45) + 1
+    return dirs[idx] or "N"
+end
+
+function Utils.getEggRarity(eggName)
+    local lower = eggName:lower()
+    for _, tier in ipairs(AppConfig.RarityTiers) do
+        for _, kw in ipairs(tier.keywords) do
+            if string.find(lower, kw, 1, true) then
+                return tier.label, tier.color, tier.prefix
+            end
+        end
+    end
+    return nil, nil, nil
+end
+
+function Utils.getBackpack()
+    local lp = ServiceManager.LocalPlayer
+    return (lp and lp:FindFirstChildOfClass("Backpack"))
+        or (lp and lp:FindFirstChild("Backpack"))
+end
+
+function Utils.getBackpackItems()
+    local items = {}
+    local backpack = Utils.getBackpack()
+    local char = Utils.getCharacter()
+    if char then
+        for _, child in ipairs(char:GetChildren()) do
+            if child:IsA("Tool") then
+                table.insert(items, {
+                    instance = child, name = child.Name, className = child.ClassName,
+                    isEquipped = true, textureId = child.TextureId or "", toolTip = child.ToolTip or ""
+                })
+            end
+        end
+    end
+    if backpack then
+        for _, child in ipairs(backpack:GetChildren()) do
+            if child:IsA("Tool") or child:IsA("Instance") then
+                table.insert(items, {
+                    instance = child, name = child.Name, className = child.ClassName,
+                    isEquipped = false,
+                    textureId = child:IsA("Tool") and child.TextureId or "",
+                    toolTip = child:IsA("Tool") and child.ToolTip or ""
+                })
+            end
+        end
+    end
+    return items
+end
+
+function Utils.printBackpack()
+    local items = Utils.getBackpackItems()
+    print("═══════════════════════════════════════════════════════════════")
+    print(string.format("🎒 [BACKPACK VIEWER] Total Items: %d", #items))
+    print("═══════════════════════════════════════════════════════════════")
+    if #items == 0 then
+        print("  (Backpack is empty / ไม่มีไอเทมในกระเป๋าหรือในมือ)")
+    else
+        for i, item in ipairs(items) do
+            local status = item.isEquipped and "[EQUIPPED]" or "[IN BAG]"
+            local tip = (#item.toolTip > 0) and (" (" .. item.toolTip .. ")") or ""
+            print(string.format("  [%d] %s %s | Class: %s%s", i, status, item.name, item.className, tip))
+        end
+    end
+    print("═══════════════════════════════════════════════════════════════")
+    return items
+end
+
+function Utils.equipTool(tool)
+    if not tool or not tool.Parent then return false end
+    local char = Utils.getCharacter()
+    local hum = Utils.getHumanoid()
+    if hum and tool:IsA("Tool") then hum:EquipTool(tool); return true
+    elseif char then tool.Parent = char; return true end
+    return false
+end
+
+function Utils.unequipTool(tool)
+    if not tool or not tool.Parent then return false end
+    local backpack = Utils.getBackpack()
+    local hum = Utils.getHumanoid()
+    if hum then hum:UnequipTools(); return true
+    elseif backpack then tool.Parent = backpack; return true end
+    return false
+end
+
+pcall(function()
+    _G.GetBackpackItems = Utils.getBackpackItems
+    _G.PrintBackpack = Utils.printBackpack
+    _G.ViewBackpack = Utils.printBackpack
+end)
+
+--==================================================
+-- [5] COMPONENT: StabilityComponent
+--==================================================
+local StabilityComponent = {}
+
+function StabilityComponent.setupAntiAFK(enable)
+    StateStore.antiAFKActive = enable
+    if StateStore.antiAFKConnection then
+        pcall(function() StateStore.antiAFKConnection:Disconnect() end)
+        StateStore.antiAFKConnection = nil
+    end
+    if enable then
+        StateStore.antiAFKConnection = ServiceManager.LocalPlayer.Idled:Connect(function()
+            if not StateStore.antiAFKActive then return end
+            pcall(function()
+                if ServiceManager.VirtualUser then
+                    ServiceManager.VirtualUser:CaptureController()
+                    ServiceManager.VirtualUser:ClickButton2(Vector2.zero)
+                elseif ServiceManager.VirtualInputManager then
+                    ServiceManager.VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Unknown, false, game)
+                    task.wait(0.05)
+                    ServiceManager.VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Unknown, false, game)
+                end
+            end)
+        end)
+    end
+end
+
+function StabilityComponent.setupAutoRejoin()
+    local function queueScript()
+        if ServiceManager.QueueOnTeleport then
+            pcall(function()
+                ServiceManager.QueueOnTeleport([[
+                    task.wait(3)
+                    pcall(function()
+                        loadstring(game:HttpGet("https://raw.githubusercontent.com/ThiAez/EggsESP/main/loader.lua"))()
+                    end)
+                ]])
             end)
         end
     end
 
-    local function queueAutoRejoin()
-        if not Services.QueueOnTeleport then return end
-        pcall(function()
-            Services.QueueOnTeleport([[
-                task.wait(3)
+    pcall(function()
+        StateStore.track(ServiceManager.GuiService.ErrorMessageChanged:Connect(function(msg)
+            if msg and #msg > 0 then
+                queueScript()
+                task.wait(2.5)
                 pcall(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/ThiAez/EggsESP/main/loader.lua"))()
+                    if #ServiceManager.Players:GetPlayers() <= 1 then
+                        ServiceManager.TeleportService:Teleport(game.PlaceId, ServiceManager.LocalPlayer)
+                    else
+                        ServiceManager.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, ServiceManager.LocalPlayer)
+                    end
                 end)
-            ]])
-        end)
-    end
-
-    local function doRejoin()
-        task.wait(2.5)
-        pcall(function()
-            if #Services.Players:GetPlayers() <= 1 then
-                Services.TeleportService:Teleport(game.PlaceId, Services.LocalPlayer)
-            else
-                Services.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Services.LocalPlayer)
             end
-        end)
-    end
+        end))
+    end)
 
-    function Stability.setupAutoRejoin()
-        if Services.GuiService then
-            Util.track(Services.GuiService.ErrorMessageChanged:Connect(function(msg)
-                if msg and #msg > 0 then
-                    queueAutoRejoin()
-                    doRejoin()
-                end
-            end))
-        end
-        task.spawn(function()
-            pcall(function()
-                local cg = Services.CoreGui
-                local promptGui = cg and cg:WaitForChild("RobloxPromptGui", 8)
-                local overlay = promptGui and promptGui:WaitForChild("promptOverlay", 8)
-                if not overlay then return end
-                Util.track(overlay.ChildAdded:Connect(function(child)
+    task.spawn(function()
+        pcall(function()
+            local promptOverlay = ServiceManager.CoreGui:WaitForChild("RobloxPromptGui", 8)
+                and ServiceManager.CoreGui.RobloxPromptGui:WaitForChild("promptOverlay", 8)
+            if promptOverlay then
+                StateStore.track(promptOverlay.ChildAdded:Connect(function(child)
                     if child.Name == "ErrorPrompt" then
-                        queueAutoRejoin()
-                        doRejoin()
+                        queueScript()
+                        task.wait(2)
+                        pcall(function()
+                            ServiceManager.TeleportService:Teleport(game.PlaceId, ServiceManager.LocalPlayer)
+                        end)
                     end
                 end))
-            end)
+            end
         end)
-    end
+    end)
 end
 
 --==================================================
--- [7] INTERACTION — fireprompt / key events
+-- [5b] COMPONENT: ReconnectComponent
 --==================================================
-local Interaction = {}
-do
-    function Interaction.holdE(duration)
-        duration = duration or 1.5
-        local vim, vu = Services.VirtualInputManager, Services.VirtualUser
-        if vim then pcall(function() vim:SendKeyEvent(true, Enum.KeyCode.E, false, game) end)
-        elseif vu then pcall(function() vu:SetKeyDown("e") end) end
-        task.wait(duration)
-        if vim then pcall(function() vim:SendKeyEvent(false, Enum.KeyCode.E, false, game) end) end
-        if vu then pcall(function() vu:SetKeyUp("e") end) end
-    end
+local ReconnectComponent = {}
 
-    function Interaction.trigger(target, fallback)
-        if not target or not target.Parent then return false end
-        local prompt = target:FindFirstChildWhichIsA("ProximityPrompt", true)
-        if prompt and prompt.Enabled and fireproximityprompt then
-            pcall(fireproximityprompt, prompt)
-            task.wait(0.2)
-            return true
-        end
-        Interaction.holdE(fallback)
-        return true
-    end
-end
+ReconnectComponent.attempts = 0
+ReconnectComponent.lastDisconnect = 0
+ReconnectComponent.isReconnecting = false
 
---==================================================
--- [8] MOVEMENT — noclip + fly-to + TP
---==================================================
-local Movement = {}
-do
-    local noclipConn = nil
-    local flying     = false
+function ReconnectComponent.isDisconnected()
+    local ok, parent = pcall(function()
+        return ServiceManager.LocalPlayer and ServiceManager.LocalPlayer.Parent
+    end)
+    if not ok or not parent then return true end
 
-    function Movement.setNoclip(enable)
-        if noclipConn then
-            pcall(function() noclipConn:Disconnect() end)
-            noclipConn = nil
-        end
-        local ch = Util.getCharacter()
-        if not ch then return end
-        if enable then
-            noclipConn = Services.RunService.Stepped:Connect(function()
-                local c = Util.getCharacter()
-                if not c then return end
-                for _, p in ipairs(c:GetDescendants()) do
-                    if p:IsA("BasePart") and p.CanCollide then p.CanCollide = false end
-                end
-            end)
-        else
-            for _, p in ipairs(ch:GetDescendants()) do
-                if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart"
-                    and not p:IsA("Accessory") and not p.Parent:IsA("Accessory") then
-                    p.CanCollide = true
-                end
-            end
-        end
-    end
+    local networkOk = pcall(function()
+        return ServiceManager.HttpService:GetAsync("https://www.google.com", true)
+    end)
+    if not networkOk then return true end
 
-    function Movement.stop()
-        flying = false
-        local h = State.movementHumanoid
-        if h and h.Parent then h.AutoRotate = true end
-        State.movementHumanoid = nil
-        Movement.setNoclip(false)
-        Util.resetVelocity(Util.getRoot())
-    end
-
-    function Movement.teleportTo(target)
-        local root = Util.getRoot()
-        local cf   = Util.getCFrame(target)
-        if not root or not cf then return false end
-        Util.resetVelocity(root)
-        root.CFrame = cf * CFrame.new(0, Config.Movement.TPHeight, 0)
-        Util.resetVelocity(root)
-        return true
-    end
-
-    function Movement.moveTo(target)
-        if State.movementMode == "Teleport" then
-            return Movement.teleportTo(target)
-        end
-        if flying then return false end
-        local root = Util.getRoot()
-        local hum  = Util.getHumanoid()
-        local cf   = Util.getCFrame(target)
-        if not root or not hum or not cf or hum.Health <= 0 then return false end
-
-        local dest = cf.Position + Vector3.new(0, Config.Movement.TPHeight, 0)
-        local dist = (root.Position - dest).Magnitude
-        if dist <= Config.Movement.ArrivalEpsilon then
-            Util.resetVelocity(root)
-            root.CFrame = cf * CFrame.new(0, Config.Movement.TPHeight, 0)
-            return true
-        end
-
-        flying = true
-        State.movementHumanoid = hum
-        local oldRotate = hum.AutoRotate
-        hum.AutoRotate = false
-        Movement.setNoclip(true)
-
-        local success  = false
-        local t0       = os.clock()
-        local maxTime  = math.min(Config.Movement.MaxFlightTime,
-                                  math.max(3.5, dist / Config.Movement.Speed + 2.5))
-        local lastPos  = root.Position
-        local lastChk  = os.clock()
-
-        while flying and (os.clock() - t0) <= maxTime do
-            if not target or not target.Parent or hum.Health <= 0 then break end
-            if Util.getRoot() ~= root then break end
-
-            local curCF = Util.getCFrame(target)
-            if curCF then dest = curCF.Position + Vector3.new(0, Config.Movement.TPHeight, 0) end
-
-            local offset = dest - root.Position
-            local d = offset.Magnitude
-            if d <= Config.Movement.ArrivalEpsilon then
-                Util.resetVelocity(root)
-                root.CFrame = (curCF or cf) * CFrame.new(0, Config.Movement.TPHeight, 0)
-                success = true
-                break
-            end
-
-            -- Anti-stuck
-            if os.clock() - lastChk >= Config.Movement.AntiStuckEvery then
-                if (root.Position - lastPos).Magnitude < Config.Movement.AntiStuckMinDelta then
-                    root.CFrame = root.CFrame * CFrame.new(0, 4, 0)
-                    Movement.setNoclip(true)
-                    Util.resetVelocity(root)
-                end
-                lastPos = root.Position
-                lastChk = os.clock()
-            end
-
-            local dt = Services.RunService.Heartbeat:Wait()
-            local step = math.min(d, Config.Movement.Speed * dt)
-            Util.resetVelocity(root)
-            local newPos = root.Position + offset.Unit * step
-            if (dest - newPos).Magnitude > 0.08 then
-                root.CFrame = CFrame.lookAt(newPos, dest)
-            else
-                root.CFrame = (curCF or cf) * CFrame.new(0, Config.Movement.TPHeight, 0)
-                success = true
-                break
-            end
-        end
-
-        flying = false
-        if hum and hum.Parent then hum.AutoRotate = oldRotate end
-        State.movementHumanoid = nil
-        Movement.setNoclip(false)
-        Util.resetVelocity(root)
-        return success
-    end
-end
-
---==================================================
--- [9] PLOT — ownership detection + deposit
---==================================================
-local Plot = {}
-do
-    local function ownerMatches(value)
-        local lp = Services.LocalPlayer
-        if not lp then return false end
-        if typeof(value) == "Instance" and value == lp then return true end
-        local s = tostring(value)
-        return s == lp.Name or s == lp.DisplayName or s == tostring(lp.UserId)
-    end
-
-    function Plot.isOwner(plot)
-        if not plot then return false end
-        local folders = {
-            plot:FindFirstChild("Data"),
-            plot:FindFirstChild("Owner"),
-            plot:FindFirstChild("Player"),
-        }
-        for _, f in ipairs(folders) do
-            if f then
-                if f:IsA("StringValue") or f:IsA("ObjectValue") or f:IsA("IntValue") then
-                    if ownerMatches(f.Value) then return true end
-                end
-            end
-        end
-        for _, attr in ipairs({"Owner","Player","OwnerId","UserId"}) do
-            local v = plot:GetAttribute(attr)
-            if v ~= nil and ownerMatches(v) then return true end
-        end
-        if plot.Name == Services.LocalPlayer.Name
-            or plot.Name == tostring(Services.LocalPlayer.UserId) then return true end
-        local sign = plot:FindFirstChild("Sign", true) or plot:FindFirstChild("PlotSign", true)
-        if sign then
-            for _, o in ipairs(sign:GetDescendants()) do
-                if o:IsA("TextLabel")
-                    and (o.Text:find(Services.LocalPlayer.Name, 1, true)
-                      or o.Text:find(Services.LocalPlayer.DisplayName, 1, true)) then
+    local ok2, coreGui = pcall(function() return game:GetService("CoreGui") end)
+    if ok2 and coreGui then
+        local promptGui = coreGui:FindFirstChild("RobloxPromptGui")
+        if promptGui then
+            local overlay = promptGui:FindFirstChild("promptOverlay")
+            if overlay then
+                if overlay:FindFirstChild("ErrorPrompt") or overlay:FindFirstChild("Disconnect") then
                     return true
                 end
             end
         end
-        return false
     end
-
-    function Plot.findHome()
-        local ws = Services.Workspace
-        if not ws then return nil end
-        local containers = {
-            ws:FindFirstChild("Plots"), ws:FindFirstChild("PlayerPlots"),
-            ws:FindFirstChild("Bases"), ws:FindFirstChild("Islands"),
-            ws:FindFirstChild("Tycoons"),
-        }
-        for _, folder in ipairs(containers) do
-            if folder then
-                for _, plot in ipairs(folder:GetChildren()) do
-                    if Plot.isOwner(plot) then return plot end
-                end
-            end
-        end
-        for _, child in ipairs(ws:GetChildren()) do
-            if child:IsA("Model")
-                and (child.Name:find("Plot") or child.Name:find("Base"))
-                and Plot.isOwner(child) then
-                return child
-            end
-        end
-        return nil
-    end
-
-    local function findDepositPoint(plot)
-        local candidates = {
-            "Deposit","EggDeposit","Clear","Spawn","Base","Center",
-        }
-        for _, n in ipairs(candidates) do
-            local p = plot:FindFirstChild(n, true)
-            if p then return p end
-        end
-        return plot.PrimaryPart or plot:FindFirstChildWhichIsA("BasePart") or plot
-    end
-
-    function Plot.teleportAndDeposit()
-        local plot = Plot.findHome()
-        if not plot then return false end
-        Movement.stop()
-        Util.resetVelocity(Util.getRoot())
-        local point = findDepositPoint(plot)
-        local arrived = Movement.moveTo(point)
-        Util.resetVelocity(Util.getRoot())
-        if arrived then
-            task.wait(0.25)
-            Interaction.trigger(point, Config.Farm.HomeDepositWait)
-        end
-        return arrived
-    end
+    return false
 end
 
---==================================================
--- [10] ESP — billboards + highlights
---==================================================
-local ESP = {}
-do
-    local billboardUpdater = nil
+function ReconnectComponent.attemptRejoin()
+    if ReconnectComponent.isReconnecting then return end
+    if not AppConfig.AutoRerunOnDisconnect then return end
+    ReconnectComponent.isReconnecting = true
 
-    local function ensureBillboard(egg)
-        local data = State.eggData[egg]
-        if not data then
-            data = { Highlight = nil, NameBillboard = nil,
-                     CustomColor = nil, CustomActive = false }
-            State.eggData[egg] = data
+    -- Discord: notify disconnect + attempt
+    pcall(function()
+        if DiscordWebhookComponent and DiscordWebhookComponent.isEnabled and DiscordWebhookComponent.isEnabled() then
+            DiscordWebhookComponent.notifySession("disconnect", {
+                player = ServiceManager.LocalPlayer.Name,
+                jobId = game.JobId,
+                placeId = tostring(game.PlaceId),
+                reattempt = ReconnectComponent.attempts,
+                totalEggs = StateStore.totalEggsCollected,
+                reason = "Auto-rerun triggered",
+            })
+            DiscordWebhookComponent.flush()
         end
-        if data.NameBillboard and data.NameBillboard.Parent then return data end
+    end)
 
-        local bb = Instance.new("BillboardGui")
-        bb.Name = "EggESP_Info"
-        bb.Size = UDim2.new(0, 180, 0, 42)
-        bb.StudsOffset = Vector3.new(0, 3.5, 0)
-        bb.AlwaysOnTop = true
-        bb.MaxDistance = Config.ESP.MaxDistance
-        bb.Enabled = false
-        bb.Parent = egg
-
-        local col = Util.colorFor(egg.Name)
-
-        local nameL = Instance.new("TextLabel")
-        nameL.Name = "EggName"
-        nameL.Size = UDim2.new(1, 0, 0, 20)
-        nameL.BackgroundTransparency = 1
-        nameL.Text = egg.Name
-        nameL.TextColor3 = col
-        nameL.TextStrokeTransparency = 0.2
-        nameL.TextStrokeColor3 = Color3.new()
-        nameL.TextSize = Config.ESP.NameSize
-        nameL.Font = Enum.Font.GothamBold
-        nameL.Parent = bb
-
-        local distL = Instance.new("TextLabel")
-        distL.Name = "Distance"
-        distL.Size = UDim2.new(1, 0, 0, 16)
-        distL.Position = UDim2.new(0, 0, 0, 19)
-        distL.BackgroundTransparency = 1
-        distL.Text = "0 studs"
-        distL.TextColor3 = Color3.fromRGB(220, 225, 235)
-        distL.TextStrokeTransparency = 0.4
-        distL.TextStrokeColor3 = Color3.new()
-        distL.TextSize = Config.ESP.DistanceSize
-        distL.Font = Enum.Font.GothamMedium
-        distL.Parent = bb
-
-        data.NameBillboard = bb
-        return data
-    end
-
-    function ESP.updateEgg(egg)
-        if not Util.isValidEgg(egg) then return end
-        local data = ensureBillboard(egg)
-        local baseColor = Util.colorFor(egg.Name)
-        local color = (data.CustomActive and data.CustomColor) or baseColor
-        local show = State.mainESPActive or data.CustomActive
-
-        if show then
-            if not data.Highlight or not data.Highlight.Parent then
-                local h = Instance.new("Highlight")
-                h.Name = "EggESP_Highlight"
-                h.Adornee = egg
-                h.FillTransparency = Config.ESP.FillTransparency
-                h.OutlineTransparency = Config.ESP.OutlineTransparency
-                h.Parent = egg
-                data.Highlight = h
-            end
-            data.Highlight.FillColor = color
-            data.Highlight.OutlineColor = color
-            data.Highlight.Enabled = true
-            if data.NameBillboard then
-                data.NameBillboard.Enabled = true
-                local nameL = data.NameBillboard:FindFirstChild("EggName")
-                if nameL then nameL.Text = egg.Name; nameL.TextColor3 = color end
-            end
-        else
-            if data.Highlight then data.Highlight.Enabled = false end
-            if data.NameBillboard then data.NameBillboard.Enabled = false end
-        end
-    end
-
-    function ESP.updateAll()
-        local folder = Services.RenderedEggsFolder
-        if not folder then return end
-        for _, egg in ipairs(folder:GetChildren()) do ESP.updateEgg(egg) end
-    end
-
-    function ESP.removeEgg(egg)
-        local data = State.eggData[egg]
-        if data then
-            if data.Highlight      then pcall(function() data.Highlight:Destroy()     end) end
-            if data.NameBillboard  then pcall(function() data.NameBillboard:Destroy() end) end
-            State.eggData[egg] = nil
-        end
-        State.eggCooldowns[egg]      = nil
-        State.autoFarmProcessed[egg] = nil
-    end
-
-    function ESP.bindEgg(egg)
-        if not egg or not egg.Parent then return end
-        local conn
-        conn = egg.Destroying:Connect(function()
-            ESP.removeEgg(egg)
-            if conn then pcall(function() conn:Disconnect() end) end
+    if ServiceManager.QueueOnTeleport then
+        local queued = pcall(function()
+            ServiceManager.QueueOnTeleport(string.format([[
+                task.wait(%d)
+                pcall(function()
+                    loadstring(game:HttpGet("%s"))()
+                end)
+            ]], AppConfig.AutoRerunDelay, AppConfig.AutoRerunLoaderURL))
         end)
-        Util.track(conn)
+        if queued then
+            pcall(function()
+                ServiceManager.TeleportService:Teleport(game.PlaceId, ServiceManager.LocalPlayer)
+            end)
+            ReconnectComponent.isReconnecting = false
+            return
+        end
     end
 
-    -- Periodic billboard refresh (single heartbeat)
-    function ESP.startUpdater()
-        local interval = 1 / Config.ESP.UpdateHz
-        local acc = 0
-        Util.track(Services.RunService.Heartbeat:Connect(function(dt)
-            acc = acc + dt
-            if acc < interval then return end
-            acc = acc - interval
-            local lp = Services.LocalPlayer
-            local root = Util.getRoot()
-            if not root then return end
-            for egg, data in pairs(State.eggData) do
-                if egg and egg.Parent then
-                    if data.NameBillboard and data.NameBillboard.Enabled then
-                        local distL = data.NameBillboard:FindFirstChild("Distance")
-                        if distL then
-                            local d = Util.getDistance(egg)
-                            distL.Text = (d == math.huge) and "?"
-                                or string.format("%d studs", math.floor(d + 0.5))
-                        end
-                    end
-                else
-                    ESP.removeEgg(egg)
+    pcall(function()
+        if #ServiceManager.Players:GetPlayers() <= 1 then
+            ServiceManager.TeleportService:Teleport(game.PlaceId, ServiceManager.LocalPlayer)
+        else
+            ServiceManager.TeleportService:TeleportToPlaceInstance(
+                game.PlaceId, game.JobId, ServiceManager.LocalPlayer
+            )
+        end
+    end)
+
+    ReconnectComponent.isReconnecting = false
+end
+
+function ReconnectComponent.start()
+    if not AppConfig.AutoRerunOnDisconnect then return end
+
+    StateStore.track(ServiceManager.Players.PlayerRemoving:Connect(function(plr)
+        if plr == ServiceManager.LocalPlayer then
+            ReconnectComponent.lastDisconnect = os.clock()
+            task.wait(1.5)
+            if ReconnectComponent.attempts < AppConfig.AutoRerunMaxAttempts then
+                ReconnectComponent.attempts += 1
+                ReconnectComponent.attemptRejoin()
+            end
+        end
+    end))
+
+    task.spawn(function()
+        local coreGui = game:GetService("CoreGui")
+        local promptGui = coreGui:WaitForChild("RobloxPromptGui", 15)
+        if not promptGui then return end
+        local overlay = promptGui:WaitForChild("promptOverlay", 15)
+        if not overlay then return end
+
+        if overlay:FindFirstChild("ErrorPrompt") or overlay:FindFirstChild("Disconnect") then
+            ReconnectComponent.lastDisconnect = os.clock()
+            task.wait(2)
+            if ReconnectComponent.attempts < AppConfig.AutoRerunMaxAttempts then
+                ReconnectComponent.attempts += 1
+                ReconnectComponent.attemptRejoin()
+            end
+        end
+
+        StateStore.track(overlay.ChildAdded:Connect(function(child)
+            if child.Name == "ErrorPrompt" or child.Name == "Disconnect" then
+                ReconnectComponent.lastDisconnect = os.clock()
+                task.wait(2)
+                if ReconnectComponent.attempts < AppConfig.AutoRerunMaxAttempts then
+                    ReconnectComponent.attempts += 1
+                    ReconnectComponent.attemptRejoin()
                 end
             end
         end))
+    end)
+
+    task.spawn(function()
+        while AppConfig.AutoRerunOnDisconnect do
+            task.wait(3)
+            if ReconnectComponent.isDisconnected() then
+                local now = os.clock()
+                if (now - ReconnectComponent.lastDisconnect) > 8 then
+                    ReconnectComponent.lastDisconnect = now
+                    if ReconnectComponent.attempts < AppConfig.AutoRerunMaxAttempts then
+                        ReconnectComponent.attempts += 1
+                        ReconnectComponent.attemptRejoin()
+                    end
+                end
+            else
+                if ReconnectComponent.attempts > 0 then
+                    task.wait(30)
+                    if not ReconnectComponent.isDisconnected() then
+                        ReconnectComponent.attempts = 0
+                    end
+                end
+            end
+        end
+    end)
+end
+
+function ReconnectComponent.stop()
+    AppConfig.AutoRerunOnDisconnect = false
+    StateStore.autoRerunActive = false
+    if DiscordWebhookComponent and DiscordWebhookComponent.stopFlusher then
+        pcall(function() DiscordWebhookComponent.stopFlusher() end)
     end
 end
 
 --==================================================
--- [11] FARM — automation engine (selectable / best / rebirth)
+-- [5c] COMPONENT: DiscordWebhookComponent (Eggs ESP Pro style)
 --==================================================
-local Farm = {}
-do
-    local function readyEggs()
-        local folder = Services.RenderedEggsFolder
-        local out = {}
-        if not folder then return out end
-        local now = os.clock()
-        for _, egg in ipairs(folder:GetChildren()) do
-            if Util.isValidEgg(egg) and State.autoFarmEggs[egg.Name] then
-                local cd = State.eggCooldowns[egg]
-                if not (cd and now <= cd) and not State.autoFarmProcessed[egg] then
-                    table.insert(out, egg)
-                end
-            end
-        end
-        table.sort(out, function(a, b) return a.Name:lower() < b.Name:lower() end)
-        return out
-    end
+DiscordWebhookComponent = {}
 
-    local function bestEgg()
-        local folder = Services.RenderedEggsFolder
-        if not folder then return nil end
-        local now = os.clock()
-        local q = Config.Farm.BestEggName:lower()
-        for _, egg in ipairs(folder:GetChildren()) do
-            local cd = State.eggCooldowns[egg]
-            if not (cd and now <= cd)
-                and Util.isValidEgg(egg)
-                and string.find(egg.Name:lower(), q, 1, true) then
-                return egg
-            end
-        end
-        return nil
-    end
+DiscordWebhookComponent.queue = {}
+DiscordWebhookComponent.flushThread = nil
+DiscordWebhookComponent.rateLimitedUntil = 0
 
-    local function cancelThread(key)
-        local t = State.threads[key]
-        if t then
-            pcall(function() task.cancel(t) end)
-            State.threads[key] = nil
-        end
-    end
+local function colorToInt(c)
+    if not c then return 0xFFFFFF end
+    return math.floor(c.R * 255) * 65536 + math.floor(c.G * 255) * 256 + math.floor(c.B * 255)
+end
 
-    local function stopKeyInput()
-        if Services.VirtualInputManager then
-            pcall(function()
-                Services.VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-            end)
-        end
-    end
-
-    -- -- Selected-eggs farm --
-    function Farm.stopAutoFarm()
-        State.autoFarmActive = false
-        Movement.stop()
-        cancelThread("autoFarm")
-        stopKeyInput()
-    end
-
-    function Farm.startAutoFarm()
-        Farm.stopAutoFarm()
-        State.autoFarmActive = true
-        local gen = State._generation
-        State.threads.autoFarm = task.spawn(function()
-            while State.autoFarmActive and State._generation == gen do
-                local hasAny = false
-                for _ in pairs(State.autoFarmEggs) do hasAny = true; break end
-                if not hasAny then
-                    Bus.emit("status", "No eggs selected", Config.Colors.TextSecondary)
-                    break
-                end
-                local list = readyEggs()
-                if #list == 0 then
-                    Bus.emit("status", "Waiting for eggs...", Config.Colors.TextSecondary)
-                    task.wait(1.0)
-                else
-                    for _, egg in ipairs(list) do
-                        if not State.autoFarmActive then break end
-                        if Util.isValidEgg(egg)
-                            and not State.autoFarmProcessed[egg]
-                            and not (State.eggCooldowns[egg] and os.clock() <= State.eggCooldowns[egg]) then
-                            local name = egg.Name
-                            Bus.emit("status", "Farming: "..name, Config.Colors.AccentGreen)
-                            if Movement.moveTo(egg) and State.autoFarmActive then
-                                task.wait(0.2)
-                                if State.autoFarmActive and Util.isValidEgg(egg) then
-                                    Bus.emit("status", "Collecting "..name.."...", Config.Colors.AccentGold)
-                                    Interaction.trigger(egg, Config.Farm.AutoFarmHoldTime)
-                                end
-                                State.eggCooldowns[egg] = os.clock() + Config.Farm.EggCooldown
-                                task.wait(0.3)
-                                if State.autoFarmActive then
-                                    Bus.emit("status", "Returning home...", Config.Colors.AccentBlue)
-                                    Movement.stop()
-                                    if Plot.teleportAndDeposit() then
-                                        State.autoFarmProcessed[egg] = true
-                                        Farm.recordHistory(name)
-                                        Bus.emit("status", "Deposited!", Config.Colors.AccentGreen)
-                                    else
-                                        Bus.emit("status", "Home unreachable", Config.Colors.AccentRed)
-                                    end
-                                end
-                                task.wait(Config.Farm.AutoEggDelay)
-                            end
-                        end
-                    end
-                end
-                task.wait(0.25)
-            end
-            State.threads.autoFarm = nil
-            State.autoFarmActive = false
-            Bus.emit("status", "AutoFarm idle", Config.Colors.TextSecondary)
-        end)
-    end
-
-    -- -- Best-egg farm --
-    function Farm.stopAutoBestEgg()
-        State.autoBestEggActive = false
-        Movement.stop()
-        cancelThread("autoBestEgg")
-        stopKeyInput()
-    end
-
-    function Farm.startAutoBestEgg()
-        Farm.stopAutoBestEgg()
-        State.autoBestEggActive = true
-        local gen = State._generation
-        State.threads.autoBestEgg = task.spawn(function()
-            while State.autoBestEggActive and State._generation == gen do
-                local egg = bestEgg()
-                if egg and egg.Parent then
-                    local name = egg.Name
-                    Bus.emit("status", "Best → "..name, Config.Colors.AccentGreen)
-                    if Movement.moveTo(egg) and State.autoBestEggActive then
-                        task.wait(0.2)
-                        if State.autoBestEggActive and egg.Parent then
-                            Bus.emit("status", "Collecting "..name.."...", Config.Colors.AccentGold)
-                            Interaction.trigger(egg, Config.Farm.AutoEggHoldTime)
-                        end
-                        State.eggCooldowns[egg] = os.clock() + Config.Farm.EggCooldown
-                        task.wait(0.3)
-                        if State.autoBestEggActive then
-                            Bus.emit("status", "Returning home...", Config.Colors.AccentBlue)
-                            Movement.stop()
-                            if Plot.teleportAndDeposit() then
-                                Farm.recordHistory(name)
-                                Bus.emit("status", "Deposited!", Config.Colors.AccentGreen)
-                            end
-                        end
-                        task.wait(Config.Farm.AutoEggDelay)
-                    else
-                        task.wait(0.5)
-                    end
-                else
-                    Bus.emit("status", "Searching: ["..Config.Farm.BestEggName.."]...",
-                             Config.Colors.TextSecondary)
-                    task.wait(1.0)
-                end
-            end
-            State.threads.autoBestEgg = nil
-            State.autoBestEggActive = false
-        end)
-    end
-
-    -- -- History --
-    function Farm.recordHistory(name)
-        table.insert(State.farmHistory, 1, {
-            name = name,
-            time = os.date("%H:%M:%S"),
-            isRare = Util.isRare(name),
+local function httpPostJSON(url, payload)
+    local body = ServiceManager.HttpService:JSONEncode(payload)
+    local ok, res = pcall(function()
+        return ServiceManager.HttpService:RequestAsync({
+            Url = url,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = body,
         })
-        if #State.farmHistory > Config.UI.MaxHistoryLogs then
-            table.remove(State.farmHistory)
+    end)
+    if not ok then
+        warn("[Discord] RequestAsync failed:", res)
+        return false, nil
+    end
+    if res.StatusCode == 429 then
+        local retryAfter = 2
+        pcall(function()
+            local data = ServiceManager.HttpService:JSONDecode(res.Body)
+            retryAfter = tonumber(data.retry_after) or 2
+        end)
+        DiscordWebhookComponent.rateLimitedUntil = os.clock() + retryAfter
+        return false, res
+    end
+    return res.Success, res
+end
+
+--==================================================
+-- Components v2 builders
+--==================================================
+
+local function textDisplay(content)
+    return { type = 10, content = tostring(content) }
+end
+
+local function separator(divider, spacing)
+    return {
+        type = 14,
+        divider = divider ~= false,
+        spacing = spacing or 1,
+    }
+end
+
+local function thumbnail(url, description, spoiler)
+    if not url or #url == 0 then return nil end
+    return {
+        type = 11,
+        media = { url = url },
+        description = description,
+        spoiler = spoiler or false,
+    }
+end
+
+local function mediaGallery(items)
+    return { type = 12, items = items }
+end
+
+local function section(textComponents, accessory)
+    local comps = {}
+    for _, t in ipairs(textComponents) do
+        table.insert(comps, type(t) == "table" and t or textDisplay(t))
+    end
+    local s = { type = 9, components = comps }
+    if accessory then s.accessory = accessory end
+    return s
+end
+
+local function container(components, accentColor)
+    return {
+        type = 17,
+        accent_color = accentColor and colorToInt(accentColor) or nil,
+        components = components,
+    }
+end
+
+local function v2Flags() return 32768 end
+
+local function makeStatGrid(stats)
+    local lines = {}
+    local i = 1
+    while i <= #stats do
+        local a = stats[i]
+        local b = stats[i + 1]
+        if b then
+            table.insert(lines, ("`%s` │ `%s`"):format(a.label, b.label))
+            table.insert(lines, ("**%s** │ **%s**"):format(a.value, b.value))
+        else
+            table.insert(lines, ("`%s`"):format(a.label))
+            table.insert(lines, ("**%s**"):format(a.value))
         end
-        State.totalEggsCollected += 1
-        State.historyDirty = true
-        Bus.emit("history-changed")
+        if i + 2 <= #stats then
+            table.insert(lines, "")
+        end
+        i = i + 2
+    end
+    return table.concat(lines, "\n")
+end
+
+local function formatUptime(seconds)
+    local h = math.floor(seconds / 3600)
+    local m = math.floor((seconds % 3600) / 60)
+    local s = seconds % 60
+    return string.format("%02d:%02d:%02d", h, m, s)
+end
+
+--==================================================
+-- Payload builders
+--==================================================
+
+function DiscordWebhookComponent.buildEggPayload(eggName, isRare, extra)
+    extra = extra or {}
+
+    local rarityLabel, rarityColor, rarityPrefix = Utils.getEggRarity(eggName)
+    if not rarityLabel then
+        rarityLabel = isRare and "RARE" or "COMMON"
+        rarityColor = isRare and AppConfig.AccentGold or AppConfig.AccentGreen
+        rarityPrefix = isRare and "✨" or "🥚"
+    end
+
+    local accent = rarityColor
+    local thumbURL = extra.imageUrl or Utils.getEggImage(eggName)
+
+    local comps = {}
+
+    local headerTitle = isRare and "Rare Egg Collected!" or "Egg Collected!"
+    local headerLines = {
+        ("### %s"):format(headerTitle),
+        ("-# %s"):format(extra.time or os.date("%H:%M:%S")),
+    }
+    table.insert(comps, section(headerLines, thumbnail(thumbURL, eggName)))
+
+    table.insert(comps, textDisplay(("## %s"):format(eggName)))
+    table.insert(comps, textDisplay(("%s `%s`"):format(rarityPrefix or "🏷️", rarityLabel)))
+
+    local stats = {}
+    stats[#stats + 1] = {
+        label = "Player",
+        value = extra.user or ServiceManager.LocalPlayer.DisplayName,
+    }
+
+    local weight = extra.weight
+    if not weight and extra.eggInstance then
+        weight = Utils.getEggWeight(extra.eggInstance)
+    end
+    if weight then
+        stats[#stats + 1] = { label = "Weight", value = Utils.formatWeight(weight) }
+    end
+
+    if extra.distance then
+        stats[#stats + 1] = { label = "Distance", value = Utils.formatDistance(extra.distance) }
+    end
+
+    if extra.bearing then
+        stats[#stats + 1] = { label = "Direction", value = extra.bearing }
+    end
+
+    local liveCount = 0
+    if ServiceManager.RenderedEggsFolder then
+        for _, e in ipairs(ServiceManager.RenderedEggsFolder:GetChildren()) do
+            if Utils.isValidEgg(e) then liveCount = liveCount + 1 end
+        end
+    end
+    stats[#stats + 1] = { label = "Live On Map", value = tostring(liveCount) .. " eggs" }
+
+    if #stats > 0 then
+        table.insert(comps, separator(false, 1))
+        table.insert(comps, textDisplay(makeStatGrid(stats)))
+    end
+
+    if AppConfig.DiscordBannerURL and #AppConfig.DiscordBannerURL > 0 then
+        table.insert(comps, separator(false, 2))
+        table.insert(comps, mediaGallery({
+            { media = { url = AppConfig.DiscordBannerURL } }
+        }))
+    end
+
+    local uptime = formatUptime(os.time() - StateStore.sessionStartTime)
+    local footerLine = string.format(
+        "-# %s v%s • Session: **%d** eggs • %s",
+        AppConfig.DiscordFooterText,
+        AppConfig.Version,
+        StateStore.totalEggsCollected,
+        uptime
+    )
+    table.insert(comps, separator(false, 1))
+    table.insert(comps, textDisplay(footerLine))
+
+    return {
+        username = AppConfig.DiscordWebhookUsername,
+        avatar_url = (#AppConfig.DiscordWebhookAvatarURL > 0)
+            and AppConfig.DiscordWebhookAvatarURL or nil,
+        flags = v2Flags(),
+        components = { container(comps, accent) },
+    }
+end
+
+function DiscordWebhookComponent.buildSessionPayload(eventType, extra)
+    extra = extra or {}
+
+    local headerTitle, accent
+    if eventType == "start" then
+        headerTitle = "Session Started"
+        accent = AppConfig.AccentGreen
+    elseif eventType == "end" then
+        headerTitle = "Session Ended"
+        accent = AppConfig.AccentRed
+    elseif eventType == "disconnect" then
+        headerTitle = "Disconnected"
+        accent = AppConfig.AccentGold
+    else
+        headerTitle = "Status"
+        accent = AppConfig.AccentBlue
+    end
+
+    local thumbURL = AppConfig.DiscordThumbnailURL
+    local bannerURL = AppConfig.DiscordBannerURL
+
+    local stats = {}
+    stats[#stats + 1] = { label = "Player", value = ServiceManager.LocalPlayer.DisplayName }
+    stats[#stats + 1] = { label = "Place ID", value = tostring(game.PlaceId) }
+    stats[#stats + 1] = {
+        label = "Job ID",
+        value = (#game.JobId > 0) and game.JobId or "solo",
+    }
+    if eventType ~= "start" then
+        stats[#stats + 1] = {
+            label = "Uptime",
+            value = extra.uptime or formatUptime(os.time() - StateStore.sessionStartTime),
+        }
+    end
+    stats[#stats + 1] = {
+        label = "Total Eggs",
+        value = tostring(extra.totalEggs or StateStore.totalEggsCollected),
+    }
+    if extra.reattempt then
+        stats[#stats + 1] = {
+            label = "Rejoin",
+            value = ("%d/%d"):format(extra.reattempt, AppConfig.AutoRerunMaxAttempts),
+        }
+    end
+
+    local comps = {}
+    table.insert(comps, section(
+        { ("### %s"):format(headerTitle) },
+        thumbnail(thumbURL, headerTitle)
+    ))
+
+    if extra.reason then
+        table.insert(comps, textDisplay(("## %s"):format(extra.reason)))
+    else
+        table.insert(comps, textDisplay(("## %s"):format(headerTitle)))
+    end
+
+    table.insert(comps, separator(false, 1))
+    table.insert(comps, textDisplay(makeStatGrid(stats)))
+
+    if extra.eggList and #extra.eggList > 0 then
+        local lines = { "### Recent Eggs" }
+        local take = math.min(#extra.eggList, 8)
+        for i = 1, take do
+            local it = extra.eggList[i]
+            local rareTag = it.isRare and " ✨" or ""
+            table.insert(lines, ("- `%s` • %s%s"):format(it.time, it.name, rareTag))
+        end
+        table.insert(comps, separator(false, 1))
+        table.insert(comps, textDisplay(table.concat(lines, "\n")))
+    end
+
+    if bannerURL and #bannerURL > 0 then
+        table.insert(comps, separator(false, 2))
+        table.insert(comps, mediaGallery({
+            { media = { url = bannerURL } }
+        }))
+    end
+
+    table.insert(comps, separator(false, 1))
+    table.insert(comps, textDisplay(("-# %s v%s • %s")
+        :format(AppConfig.DiscordFooterText, AppConfig.Version, os.date("%H:%M:%S"))))
+
+    return {
+        username = AppConfig.DiscordWebhookUsername,
+        avatar_url = (#AppConfig.DiscordWebhookAvatarURL > 0)
+            and AppConfig.DiscordWebhookAvatarURL or nil,
+        flags = v2Flags(),
+        components = { container(comps, accent) },
+    }
+end
+
+--==================================================
+-- Queue & send
+--==================================================
+
+function DiscordWebhookComponent.isEnabled()
+    return AppConfig.DiscordWebhookEnabled
+        and type(AppConfig.DiscordWebhookURL) == "string"
+        and #AppConfig.DiscordWebhookURL > 0
+end
+
+function DiscordWebhookComponent.enqueue(payload, mentionContent)
+    if not DiscordWebhookComponent.isEnabled() then return end
+    if mentionContent then payload.content = mentionContent end
+    table.insert(DiscordWebhookComponent.queue, payload)
+    if #DiscordWebhookComponent.queue > AppConfig.DiscordMaxQueueSize then
+        table.remove(DiscordWebhookComponent.queue, 1)
+    end
+end
+
+function DiscordWebhookComponent.flush()
+    if not DiscordWebhookComponent.isEnabled() then
+        table.clear(DiscordWebhookComponent.queue)
+        return
+    end
+    if os.clock() < DiscordWebhookComponent.rateLimitedUntil then return end
+
+    local url = AppConfig.DiscordWebhookURL
+    while #DiscordWebhookComponent.queue > 0 do
+        local payload = table.remove(DiscordWebhookComponent.queue, 1)
+        local ok = httpPostJSON(url, payload)
+        if not ok then return end
+        task.wait(1.1)
+    end
+end
+
+function DiscordWebhookComponent.startFlusher()
+    if DiscordWebhookComponent.flushThread then return end
+    DiscordWebhookComponent.flushThread = task.spawn(function()
+        while true do
+            task.wait(AppConfig.DiscordQueueFlushInterval)
+            pcall(DiscordWebhookComponent.flush)
+        end
+    end)
+end
+
+function DiscordWebhookComponent.stopFlusher()
+    if DiscordWebhookComponent.flushThread then
+        pcall(function() task.cancel(DiscordWebhookComponent.flushThread) end)
+        DiscordWebhookComponent.flushThread = nil
+    end
+    table.clear(DiscordWebhookComponent.queue)
+end
+
+--==================================================
+-- Public helpers
+--==================================================
+
+function DiscordWebhookComponent.notifyEgg(eggName, isRare, extra)
+    if isRare and not AppConfig.DiscordNotifyRareEggs then return end
+    if not isRare and not AppConfig.DiscordNotifyEggCollected then return end
+
+    local mention = nil
+    if isRare and (AppConfig.DiscordMentionRoleID ~= "" or AppConfig.DiscordMentionUserID ~= "") then
+        local parts = {}
+        if AppConfig.DiscordMentionRoleID ~= "" then
+            table.insert(parts, ("<@&%s>"):format(AppConfig.DiscordMentionRoleID))
+        end
+        if AppConfig.DiscordMentionUserID ~= "" then
+            table.insert(parts, ("<@%s>"):format(AppConfig.DiscordMentionUserID))
+        end
+        mention = table.concat(parts, " ")
+    end
+
+    DiscordWebhookComponent.enqueue(
+        DiscordWebhookComponent.buildEggPayload(eggName, isRare, extra or {}),
+        mention
+    )
+end
+
+function DiscordWebhookComponent.notifySession(eventType, extra)
+    if eventType == "start" and not AppConfig.DiscordNotifySessionStart then return end
+    if eventType == "end" and not AppConfig.DiscordNotifySessionEnd then return end
+    if eventType == "disconnect" and not AppConfig.DiscordNotifyDisconnect then return end
+    DiscordWebhookComponent.enqueue(
+        DiscordWebhookComponent.buildSessionPayload(eventType, extra or {})
+    )
+end
+
+function DiscordWebhookComponent.test()
+    local payload = DiscordWebhookComponent.buildSessionPayload("start", {
+        reason = "Manual Test",
+        totalEggs = StateStore.totalEggsCollected,
+    })
+    return httpPostJSON(AppConfig.DiscordWebhookURL, payload)
+end
+
+--==================================================
+-- [6] COMPONENT: InteractionComponent
+--==================================================
+local InteractionComponent = {}
+
+function InteractionComponent.holdEKey(duration)
+    duration = duration or 1.5
+    local vim = ServiceManager.VirtualInputManager
+    local vu = ServiceManager.VirtualUser
+    if vim then pcall(function() vim:SendKeyEvent(true, Enum.KeyCode.E, false, game) end)
+    elseif vu then pcall(function() vu:SetKeyDown("e") end) end
+    task.wait(duration)
+    if vim then pcall(function() vim:SendKeyEvent(false, Enum.KeyCode.E, false, game) end) end
+    if vu then pcall(function() vu:SetKeyUp("e") end) end
+end
+
+function InteractionComponent.trigger(targetObject, fallbackDuration)
+    if not targetObject then return false end
+    local prompt = targetObject:FindFirstChildWhichIsA("ProximityPrompt", true)
+    if prompt and prompt.Enabled and fireproximityprompt then
+        pcall(function() fireproximityprompt(prompt) end)
+        task.wait(0.2)
+        return true
+    end
+    InteractionComponent.holdEKey(fallbackDuration)
+    return true
+end
+
+--==================================================
+-- [7] COMPONENT: MovementComponent
+--==================================================
+local MovementComponent = {}
+
+function MovementComponent.setNoclip(enabled)
+    if StateStore.noclipConnection then
+        pcall(function() StateStore.noclipConnection:Disconnect() end)
+        StateStore.noclipConnection = nil
+    end
+    local character = Utils.getCharacter()
+    if not character then return end
+    if enabled then
+        StateStore.noclipConnection = ServiceManager.RunService.Stepped:Connect(function()
+            local char = Utils.getCharacter()
+            if char then
+                for _, part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        for _, part in ipairs(character:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart"
+                and not part:IsA("Accessory") and not part.Parent:IsA("Accessory") then
+                part.CanCollide = true
+            end
+        end
+    end
+end
+
+function MovementComponent.stop()
+    StateStore.movementActive = false
+    if StateStore.movementHumanoid and StateStore.movementHumanoid.Parent then
+        StateStore.movementHumanoid.AutoRotate = true
+    end
+    StateStore.movementHumanoid = nil
+    MovementComponent.setNoclip(false)
+    Utils.resetVelocity(Utils.getRootPart())
+end
+
+function MovementComponent.teleportTo(target)
+    local root = Utils.getRootPart()
+    if not root then return false end
+    local targetCFrame = Utils.getTargetCFrame(target)
+    if not targetCFrame then return false end
+    Utils.resetVelocity(root)
+    root.CFrame = targetCFrame * CFrame.new(0, AppConfig.TPHeight, 0)
+    Utils.resetVelocity(root)
+    return true
+end
+
+function MovementComponent.moveTo(target)
+    if StateStore.movementMode == "Teleport" then
+        return MovementComponent.teleportTo(target)
+    end
+    if StateStore.movementActive then return false end
+
+    local root = Utils.getRootPart()
+    local humanoid = Utils.getHumanoid()
+    local targetCFrame = Utils.getTargetCFrame(target)
+    if not root or not humanoid or not targetCFrame or humanoid.Health <= 0 then return false end
+
+    local destination = targetCFrame.Position + Vector3.new(0, AppConfig.TPHeight, 0)
+    local startDistance = (root.Position - destination).Magnitude
+
+    if startDistance <= 2.8 then
+        Utils.resetVelocity(root)
+        root.CFrame = targetCFrame * CFrame.new(0, AppConfig.TPHeight, 0)
+        return true
+    end
+
+    StateStore.movementActive = true
+    StateStore.movementHumanoid = humanoid
+    local oldAutoRotate = humanoid.AutoRotate
+    local success = false
+    local startTime = os.clock()
+    local maxTime = math.max(3.5, (startDistance / AppConfig.MovementSpeed) + 2.5)
+    local lastCheckPos = root.Position
+    local lastCheckTime = os.clock()
+
+    MovementComponent.setNoclip(true)
+    humanoid.AutoRotate = false
+
+    while StateStore.movementActive and (os.clock() - startTime <= maxTime) do
+        if not target or not target.Parent or humanoid.Health <= 0 then break end
+        if Utils.getRootPart() ~= root then break end
+
+        local curTargetCF = Utils.getTargetCFrame(target)
+        if curTargetCF then
+            destination = curTargetCF.Position + Vector3.new(0, AppConfig.TPHeight, 0)
+        end
+
+        local offset = destination - root.Position
+        local distance = offset.Magnitude
+
+        if distance <= 2.8 then
+            Utils.resetVelocity(root)
+            root.CFrame = (curTargetCF or targetCFrame) * CFrame.new(0, AppConfig.TPHeight, 0)
+            success = true
+            break
+        end
+
+        if os.clock() - lastCheckTime >= AppConfig.AntiStuckThreshold then
+            if (root.Position - lastCheckPos).Magnitude < 1.2 then
+                root.CFrame = root.CFrame * CFrame.new(0, 4, 0)
+                MovementComponent.setNoclip(true)
+                Utils.resetVelocity(root)
+            end
+            lastCheckPos = root.Position
+            lastCheckTime = os.clock()
+        end
+
+        local dt = ServiceManager.RunService.Heartbeat:Wait()
+        local step = math.min(distance, AppConfig.MovementSpeed * dt)
+        Utils.resetVelocity(root)
+        local newPos = root.Position + (offset.Unit * step)
+        if (destination - newPos).Magnitude > 0.08 then
+            root.CFrame = CFrame.lookAt(newPos, destination)
+        else
+            root.CFrame = (curTargetCF or targetCFrame) * CFrame.new(0, AppConfig.TPHeight, 0)
+            success = true
+            break
+        end
+    end
+
+    StateStore.movementActive = false
+    if humanoid and humanoid.Parent then humanoid.AutoRotate = oldAutoRotate end
+    StateStore.movementHumanoid = nil
+    MovementComponent.setNoclip(false)
+    Utils.resetVelocity(root)
+    return success
+end
+
+--==================================================
+-- [8] COMPONENT: PlotComponent
+--==================================================
+local PlotComponent = {}
+
+function PlotComponent.isOwner(plot)
+    if not plot then return false end
+    local lp = ServiceManager.LocalPlayer
+    local dataFolder = plot:FindFirstChild("Data")
+    if dataFolder then
+        local ownerVal = dataFolder:FindFirstChild("Owner") or dataFolder:FindFirstChild("Player")
+        if ownerVal then
+            if ownerVal:IsA("StringValue") and (ownerVal.Value == lp.Name or ownerVal.Value == lp.DisplayName) then return true
+            elseif ownerVal:IsA("ObjectValue") and ownerVal.Value == lp then return true
+            elseif ownerVal:IsA("IntValue") and ownerVal.Value == lp.UserId then return true
+            elseif tostring(ownerVal.Value) == lp.Name or tostring(ownerVal.Value) == tostring(lp.UserId) then return true end
+        end
+    end
+    local direct = plot:FindFirstChild("Owner") or plot:FindFirstChild("Player")
+    if direct then
+        if direct:IsA("StringValue") and (direct.Value == lp.Name or direct.Value == lp.DisplayName) then return true
+        elseif direct:IsA("ObjectValue") and direct.Value == lp then return true
+        elseif direct:IsA("IntValue") and direct.Value == lp.UserId then return true
+        elseif tostring(direct.Value) == lp.Name then return true end
+    end
+    local attr = plot:GetAttribute("Owner") or plot:GetAttribute("Player")
+    if attr and (attr == lp.Name or attr == lp.DisplayName) then return true end
+    local attrId = plot:GetAttribute("OwnerId") or plot:GetAttribute("UserId")
+    if attrId and (attrId == lp.UserId or tostring(attrId) == tostring(lp.UserId)) then return true end
+    if plot.Name == lp.Name or plot.Name == tostring(lp.UserId) then return true end
+    local sign = plot:FindFirstChild("Sign", true) or plot:FindFirstChild("PlotSign", true)
+    if sign then
+        for _, obj in ipairs(sign:GetDescendants()) do
+            if obj:IsA("TextLabel") and (obj.Text:find(lp.Name) or obj.Text:find(lp.DisplayName)) then return true end
+        end
+    end
+    return false
+end
+
+function PlotComponent.findHomePlot()
+    local ws = ServiceManager.Workspace
+    local folders = {
+        ws:FindFirstChild("Plots"), ws:FindFirstChild("PlayerPlots"),
+        ws:FindFirstChild("Bases"), ws:FindFirstChild("Islands"),
+        ws:FindFirstChild("Tycoons")
+    }
+    for _, folder in ipairs(folders) do
+        if folder then
+            for _, plot in ipairs(folder:GetChildren()) do
+                if PlotComponent.isOwner(plot) then return plot end
+            end
+        end
+    end
+    for _, child in ipairs(ws:GetChildren()) do
+        if child:IsA("Model") and (child.Name:find("Plot") or child.Name:find("Base")) then
+            if PlotComponent.isOwner(child) then return child end
+        end
+    end
+    return nil
+end
+
+function PlotComponent.teleportAndDeposit()
+    local plot = PlotComponent.findHomePlot()
+    if not plot then return false end
+    MovementComponent.stop()
+    Utils.resetVelocity(Utils.getRootPart())
+    local depositPoint = plot:FindFirstChild("Deposit", true)
+        or plot:FindFirstChild("EggDeposit", true)
+        or plot:FindFirstChild("Clear", true)
+        or plot:FindFirstChild("Spawn", true)
+        or plot:FindFirstChild("Base", true)
+        or plot:FindFirstChild("Center", true)
+        or plot.PrimaryPart
+        or plot:FindFirstChildWhichIsA("BasePart")
+        or plot
+    local arrived = MovementComponent.moveTo(depositPoint)
+    Utils.resetVelocity(Utils.getRootPart())
+    if arrived then
+        task.wait(0.25)
+        InteractionComponent.trigger(depositPoint, AppConfig.HomeDepositWait)
+    end
+    return arrived
+end
+
+--==================================================
+-- [9] COMPONENT: ESPComponent (v2.2.0 Enhanced)
+--==================================================
+local ESPComponent = {}
+
+function ESPComponent.getColor(eggName)
+    local _, tierColor = Utils.getEggRarity(eggName)
+    if tierColor then return tierColor end
+    local hash = 0
+    for i = 1, #eggName do hash = hash + string.byte(eggName, i) * (i + 1) end
+    local palette = AppConfig.ESPPalette
+    return palette[(hash % #palette) + 1]
+end
+
+function ESPComponent.createBillboard(egg)
+    local data = StateStore.eggData[egg]
+    if not data then return end
+    if data.NameBillboard and data.NameBillboard.Parent then
+        data.NameBillboard:Destroy()
+    end
+
+    local layout = StateStore.espBillboardLayout or "Detailed"
+    local height
+    if layout == "Minimal" then height = 24
+    elseif layout == "Compact" then height = 42
+    else height = 68 end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "EggESP_Info"
+    billboard.Size = UDim2.new(0, 200, 0, height)
+    billboard.StudsOffset = Vector3.new(0, 3.5, 0)
+    billboard.AlwaysOnTop = true
+    billboard.MaxDistance = StateStore.espMaxRenderDistance or AppConfig.ESPMaxRenderDistance
+    billboard.Enabled = false
+    billboard.Parent = egg
+
+    local eggColor = ESPComponent.getColor(egg.Name)
+    local rarityLabel, rarityColor, rarityPrefix = Utils.getEggRarity(egg.Name)
+
+    local y = 0
+
+    if StateStore.espShowRarityTag and rarityLabel and layout ~= "Minimal" then
+        local tag = Instance.new("TextLabel")
+        tag.Name = "RarityTag"
+        tag.Size = UDim2.new(1, 0, 0, 14)
+        tag.Position = UDim2.new(0, 0, 0, y)
+        tag.BackgroundTransparency = 1
+        tag.Text = string.format("%s %s", rarityPrefix or "", rarityLabel)
+        tag.TextColor3 = rarityColor or eggColor
+        tag.TextStrokeTransparency = 0.3
+        tag.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        tag.TextSize = 9
+        tag.Font = Enum.Font.GothamBold
+        tag.Parent = billboard
+        y = y + 14
+    end
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "EggName"
+    nameLabel.Size = UDim2.new(1, 0, 0, layout == "Minimal" and 24 or 18)
+    nameLabel.Position = UDim2.new(0, 0, 0, y)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = egg.Name
+    nameLabel.TextColor3 = eggColor
+    nameLabel.TextStrokeTransparency = 0.2
+    nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameLabel.TextSize = layout == "Minimal" and 13 or AppConfig.ESPNameSize
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.Parent = billboard
+    y = y + (layout == "Minimal" and 24 or 18)
+
+    if layout == "Minimal" then
+        data.NameBillboard = billboard
+        return
+    end
+
+    if StateStore.espShowWeight then
+        local wLabel = Instance.new("TextLabel")
+        wLabel.Name = "Weight"
+        wLabel.Size = UDim2.new(1, 0, 0, 14)
+        wLabel.Position = UDim2.new(0, 0, 0, y)
+        wLabel.BackgroundTransparency = 1
+        local kg = Utils.getEggWeight(egg)
+        wLabel.Text = "⚖️ " .. Utils.formatWeight(kg)
+        wLabel.TextColor3 = AppConfig.AccentGold
+        wLabel.TextStrokeTransparency = 0.35
+        wLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        wLabel.TextSize = 10
+        wLabel.Font = Enum.Font.GothamMedium
+        wLabel.Parent = billboard
+        y = y + 14
+    end
+
+    if StateStore.espShowDistance then
+        local dLabel = Instance.new("TextLabel")
+        dLabel.Name = "Distance"
+        dLabel.Size = UDim2.new(1, 0, 0, 14)
+        dLabel.Position = UDim2.new(0, 0, 0, y)
+        dLabel.BackgroundTransparency = 1
+        dLabel.Text = "0"
+        dLabel.TextColor3 = Color3.fromRGB(220, 225, 235)
+        dLabel.TextStrokeTransparency = 0.4
+        dLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        dLabel.TextSize = 10
+        dLabel.Font = Enum.Font.GothamMedium
+        dLabel.Parent = billboard
+    end
+
+    data.NameBillboard = billboard
+end
+
+function ESPComponent.updateBillboard(egg)
+    local data = StateStore.eggData[egg]
+    if not data or not data.NameBillboard or not data.NameBillboard.Parent then return end
+    local billboard = data.NameBillboard
+
+    local nameLabel = billboard:FindFirstChild("EggName")
+    if nameLabel then nameLabel.Text = egg.Name end
+
+    local wLabel = billboard:FindFirstChild("Weight")
+    if wLabel then
+        wLabel.Text = "⚖️ " .. Utils.formatWeight(Utils.getEggWeight(egg))
+    end
+
+    local dLabel = billboard:FindFirstChild("Distance")
+    if dLabel then
+        local d = Utils.getDistanceToTarget(egg)
+        local distStr = Utils.formatDistance(d)
+        if StateStore.espShowCompass then
+            local root = Utils.getRootPart()
+            local targetPos = Utils.getTargetPosition(egg)
+            local bearing = (root and targetPos) and Utils.getCompassBearing(root.Position, targetPos) or ""
+            dLabel.Text = string.format("%s  %s", distStr, bearing)
+        else
+            dLabel.Text = distStr
+        end
+    end
+end
+
+function ESPComponent.updateEgg(egg)
+    if not Utils.isValidEgg(egg) then return end
+
+    local isPinned = StateStore.pinnedEggs[egg]
+
+    if StateStore.espRareOnly and not isPinned and not Utils.isRareEgg(egg.Name) then
+        local data = StateStore.eggData[egg]
+        if data then
+            if data.Highlight then data.Highlight.Enabled = false end
+            if data.NameBillboard then data.NameBillboard.Enabled = false end
+        end
+        return
+    end
+
+    local dist = Utils.getDistanceToTarget(egg)
+    local maxDist = StateStore.espMaxRenderDistance or AppConfig.ESPMaxRenderDistance
+    local inRange = (dist == math.huge) or (dist <= maxDist)
+    if not inRange and not isPinned then
+        local data = StateStore.eggData[egg]
+        if data then
+            if data.Highlight then data.Highlight.Enabled = false end
+            if data.NameBillboard then data.NameBillboard.Enabled = false end
+        end
+        return
+    end
+
+    if not StateStore.eggData[egg] then
+        StateStore.eggData[egg] = {
+            Highlight = nil, NameBillboard = nil,
+            CustomColor = ESPComponent.getColor(egg.Name),
+            CustomActive = false
+        }
+    end
+    local data = StateStore.eggData[egg]
+    local eggColor = ESPComponent.getColor(egg.Name)
+    local shouldShow = data.CustomActive or isPinned or StateStore.mainESPActive
+    local color = (data.CustomActive or isPinned) and (data.CustomColor or eggColor) or eggColor
+
+    if shouldShow then
+        if not data.Highlight or not data.Highlight.Parent then
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "EggESP_Highlight"
+            highlight.Adornee = egg
+            highlight.Parent = egg
+            data.Highlight = highlight
+        end
+
+        local style = StateStore.espStyle or AppConfig.ESPESPStyle
+        if style == "Fill" then
+            data.Highlight.FillTransparency = AppConfig.ESPFillTransparency
+            data.Highlight.OutlineTransparency = 1
+        elseif style == "Outline" then
+            data.Highlight.FillTransparency = 1
+            data.Highlight.OutlineTransparency = AppConfig.ESPOutlineTransparency
+        else
+            data.Highlight.FillTransparency = AppConfig.ESPFillTransparency
+            data.Highlight.OutlineTransparency = AppConfig.ESPOutlineTransparency
+        end
+
+        data.Highlight.FillColor = color
+        data.Highlight.OutlineColor = color
+        data.Highlight.Enabled = true
+
+        ESPComponent.createBillboard(egg)
+        if data.NameBillboard then
+            data.NameBillboard.MaxDistance = maxDist
+            data.NameBillboard.Enabled = true
+            ESPComponent.updateBillboard(egg)
+        end
+    else
+        if data.Highlight then data.Highlight.Enabled = false end
+        if data.NameBillboard then data.NameBillboard.Enabled = false end
+    end
+end
+
+function ESPComponent.updateAll()
+    local folder = ServiceManager.RenderedEggsFolder
+    if not folder then return end
+    for _, egg in ipairs(folder:GetChildren()) do ESPComponent.updateEgg(egg) end
+end
+
+function ESPComponent.removeEgg(egg)
+    local data = StateStore.eggData[egg]
+    if data then
+        if data.Highlight then pcall(function() data.Highlight:Destroy() end) end
+        if data.NameBillboard then pcall(function() data.NameBillboard:Destroy() end) end
+        StateStore.eggData[egg] = nil
+    end
+    StateStore.autoFarmProcessed[egg] = nil
+    StateStore.eggCooldowns[egg] = nil
+    StateStore.pinnedEggs[egg] = nil
+end
+
+function ESPComponent.bindEggLifecycle(egg)
+    if not egg or not egg.Parent then return end
+    local conn
+    conn = egg.Destroying:Connect(function()
+        ESPComponent.removeEgg(egg)
+        if conn then pcall(function() conn:Disconnect() end) end
+    end)
+    StateStore.track(conn)
+end
+
+function ESPComponent.togglePin(egg)
+    if not egg then return end
+    if StateStore.pinnedEggs[egg] then
+        StateStore.pinnedEggs[egg] = nil
+    else
+        StateStore.pinnedEggs[egg] = true
+    end
+    ESPComponent.updateEgg(egg)
+end
+
+function ESPComponent.refreshAllBillboards()
+    for egg, data in pairs(StateStore.eggData) do
+        if egg and egg.Parent and data.NameBillboard then
+            data.NameBillboard:Destroy()
+            data.NameBillboard = nil
+        end
+    end
+    ESPComponent.updateAll()
+end
+
+function ESPComponent.reapplySettings()
+    local folder = ServiceManager.RenderedEggsFolder
+    if not folder then return end
+    for _, egg in ipairs(folder:GetChildren()) do
+        ESPComponent.updateEgg(egg)
     end
 end
 
 --==================================================
--- [12] REBIRTH — scan + auto-loop
+-- [10] COMPONENT: FarmComponent
 --==================================================
-local Rebirth = {}
-do
-    local function getRemote()
-        local rs = Services.ReplicatedStorage
-        local remotes = rs and rs:FindFirstChild("Remotes")
-        local gameR   = remotes and remotes:FindFirstChild("Game")
-        local ev      = gameR and gameR:FindFirstChild("Rebirth")
-        if ev and ev:IsA("RemoteEvent") then return ev end
-        local fb = rs and rs:FindFirstChild("Rebirth", true)
-        if fb and fb:IsA("RemoteEvent") then return fb end
-        return nil
-    end
+local FarmComponent = {}
 
-    function Rebirth.fire()
-        local ev = getRemote()
-        if not ev then return false end
-        return (pcall(function() ev:FireServer() end))
-    end
-
-    function Rebirth.findEggByName(eggName)
-        local folder = Services.RenderedEggsFolder
-        if not folder then return nil end
-        local q = eggName:lower():match("^%s*(.-)%s*$")
-        local now = os.clock()
-        local function match(n)
-            n = n:lower()
-            return n == q or string.find(n, q, 1, true) or string.find(q, n, 1, true)
-        end
-        for _, egg in ipairs(folder:GetChildren()) do
-            local cd = State.eggCooldowns[egg]
-            if not (cd and now <= cd) and Util.isValidEgg(egg) and match(egg.Name) then
-                return egg
+function FarmComponent.getReadyEggs()
+    local found = {}
+    local folder = ServiceManager.RenderedEggsFolder
+    if not folder then return found end
+    local now = os.clock()
+    for _, egg in ipairs(folder:GetChildren()) do
+        if Utils.isValidEgg(egg) and StateStore.autoFarmEggs[egg.Name] then
+            local cd = StateStore.eggCooldowns[egg]
+            local onCooldown = (cd and now <= cd)
+            if not onCooldown and not StateStore.autoFarmProcessed[egg] then
+                table.insert(found, egg)
             end
         end
-        for _, egg in ipairs(folder:GetChildren()) do
-            if Util.isValidEgg(egg) and match(egg.Name) then return egg end
-        end
-        return nil
     end
+    table.sort(found, function(a, b) return a.Name:lower() < b.Name:lower() end)
+    return found
+end
 
-    function Rebirth.scanMissing()
-        local missing, seen = {}, {}
-        local lp = Services.LocalPlayer
-        local pg = lp and lp:FindFirstChild("PlayerGui")
-        if not pg then return missing end
+function FarmComponent.findBestEgg()
+    local folder = ServiceManager.RenderedEggsFolder
+    if not folder then return nil end
+    local now = os.clock()
+    local query = AppConfig.BestEggName:lower()
+    for _, egg in ipairs(folder:GetChildren()) do
+        local cd = StateStore.eggCooldowns[egg]
+        local onCooldown = (cd and now <= cd)
+        if not onCooldown and Utils.isValidEgg(egg) and string.find(egg.Name:lower(), query, 1, true) then
+            return egg
+        end
+    end
+    return nil
+end
 
-        local function collect(container)
-            if not container then return end
-            for _, item in ipairs(container:GetDescendants()) do
-                if item:IsA("TextLabel") then
-                    local t = item.Text
-                    if string.find(t, "^%s*0%s*/%s*%d+")
-                        or string.find(t, "%s+0%s*/%s*%d+") then
-                        local parent = item.Parent
-                        if parent then
-                            local candidate
-                            local pn = parent.Name
-                            if string.find(pn:lower(), "egg", 1, true) then
-                                candidate = pn
-                            else
-                                for _, sib in ipairs(parent:GetChildren()) do
-                                    if sib:IsA("TextLabel") and sib ~= item then
-                                        local st = sib.Text:match("^%s*(.-)%s*$")
-                                        if st and #st > 0
-                                            and string.find(st:lower(), "egg", 1, true) then
-                                            candidate = st
-                                            break
-                                        end
+function FarmComponent.stopAutoFarm()
+    StateStore.autoFarmActive = false
+    MovementComponent.stop()
+    if StateStore.autoFarmThread then
+        pcall(function() task.cancel(StateStore.autoFarmThread) end)
+        StateStore.autoFarmThread = nil
+    end
+    pcall(function()
+        if ServiceManager.VirtualInputManager then
+            ServiceManager.VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        end
+    end)
+end
+
+function FarmComponent.startAutoFarm(statusUpdater, stopButtonUpdater)
+    FarmComponent.stopAutoFarm()
+    StateStore.autoFarmActive = true
+    if stopButtonUpdater then stopButtonUpdater(true) end
+
+    StateStore.autoFarmThread = task.spawn(function()
+        while StateStore.autoFarmActive do
+            local hasAny = false
+            for _, v in pairs(StateStore.autoFarmEggs) do if v then hasAny = true break end end
+            if not hasAny then
+                if statusUpdater then statusUpdater("No eggs selected", AppConfig.TextSecondary) end
+                break
+            end
+
+            local readyEggs = FarmComponent.getReadyEggs()
+            if #readyEggs == 0 then
+                if statusUpdater then statusUpdater("Waiting for eggs to spawn / CD...", AppConfig.TextSecondary) end
+                task.wait(1.0)
+            else
+                for _, egg in ipairs(readyEggs) do
+                    if not StateStore.autoFarmActive then break end
+                    local cd = StateStore.eggCooldowns[egg]
+                    local onCooldown = (cd and os.clock() <= cd)
+                    if Utils.isValidEgg(egg) and not StateStore.autoFarmProcessed[egg] and not onCooldown then
+                        local currentEggName = egg.Name
+                        if statusUpdater then statusUpdater("Farming: " .. currentEggName, AppConfig.AccentGreen) end
+
+                        local arrived = MovementComponent.moveTo(egg)
+                        if arrived and StateStore.autoFarmActive then
+                            task.wait(0.2)
+                            if StateStore.autoFarmActive and Utils.isValidEgg(egg) then
+                                if statusUpdater then statusUpdater("Collecting " .. currentEggName .. "...", AppConfig.AccentGold) end
+                                InteractionComponent.trigger(egg, AppConfig.AutoFarmHoldTime)
+                            end
+                            StateStore.eggCooldowns[egg] = os.clock() + AppConfig.EggCooldownSeconds
+                            task.wait(0.3)
+                            if StateStore.autoFarmActive then
+                                if statusUpdater then statusUpdater("Returning Home & Depositing...", AppConfig.AccentBlue) end
+                                MovementComponent.stop()
+                                local homeSuccess = PlotComponent.teleportAndDeposit()
+                                if homeSuccess then
+                                    StateStore.autoFarmProcessed[egg] = true
+                                    StateStore.addHistoryRecord(currentEggName)
+                                    if statusUpdater then statusUpdater("Egg Deposited!", AppConfig.AccentGreen) end
+                                else
+                                    if statusUpdater then statusUpdater("Home Plot Unreachable", AppConfig.AccentRed) end
+                                end
+                            end
+                            task.wait(AppConfig.AutoEggDelay)
+                        end
+                    end
+                end
+            end
+            task.wait(0.25)
+        end
+        StateStore.autoFarmThread = nil
+        StateStore.autoFarmActive = false
+        if stopButtonUpdater then stopButtonUpdater(false) end
+        if statusUpdater then statusUpdater("AutoFarm Idle", AppConfig.TextSecondary) end
+    end)
+end
+
+function FarmComponent.stopAutoBestEgg()
+    StateStore.autoBestEggActive = false
+    MovementComponent.stop()
+    if StateStore.autoBestEggThread then
+        pcall(function() task.cancel(StateStore.autoBestEggThread) end)
+        StateStore.autoBestEggThread = nil
+    end
+    pcall(function()
+        if ServiceManager.VirtualInputManager then
+            ServiceManager.VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        end
+    end)
+end
+
+function FarmComponent.startAutoBestEgg(statusUpdater)
+    FarmComponent.stopAutoBestEgg()
+    StateStore.autoBestEggActive = true
+    StateStore.autoBestEggThread = task.spawn(function()
+        while StateStore.autoBestEggActive do
+            local egg = FarmComponent.findBestEgg()
+            if egg and egg.Parent then
+                local currentEggName = egg.Name
+                if statusUpdater then statusUpdater("Moving to " .. currentEggName, AppConfig.AccentGreen) end
+                local arrived = MovementComponent.moveTo(egg)
+                if arrived and StateStore.autoBestEggActive then
+                    task.wait(0.2)
+                    if StateStore.autoBestEggActive and egg.Parent then
+                        if statusUpdater then statusUpdater("Collecting " .. currentEggName .. "...", AppConfig.AccentGold) end
+                        InteractionComponent.trigger(egg, AppConfig.AutoEggHoldTime)
+                    end
+                    StateStore.eggCooldowns[egg] = os.clock() + AppConfig.EggCooldownSeconds
+                    task.wait(0.3)
+                    if StateStore.autoBestEggActive then
+                        if statusUpdater then statusUpdater("Returning Home & Depositing...", AppConfig.AccentBlue) end
+                        MovementComponent.stop()
+                        local ok = PlotComponent.teleportAndDeposit()
+                        if ok then
+                            StateStore.addHistoryRecord(currentEggName)
+                            if statusUpdater then statusUpdater("Best Egg Deposited!", AppConfig.AccentGreen) end
+                        end
+                    end
+                    task.wait(AppConfig.AutoEggDelay)
+                else
+                    task.wait(0.5)
+                end
+            else
+                if statusUpdater then statusUpdater("Searching: [" .. AppConfig.BestEggName .. "]...", AppConfig.TextSecondary) end
+                task.wait(1.0)
+            end
+        end
+        StateStore.autoBestEggThread = nil
+        StateStore.autoBestEggActive = false
+    end)
+end
+
+--==================================================
+-- [11] COMPONENT: RebirthComponent
+--==================================================
+local RebirthComponent = {}
+
+function RebirthComponent.getRebirthRemote()
+    local rs = ServiceManager.ReplicatedStorage or game:GetService("ReplicatedStorage")
+    local remotes = rs:FindFirstChild("Remotes")
+    local gameRemotes = remotes and remotes:FindFirstChild("Game")
+    local rebirthEvent = gameRemotes and gameRemotes:FindFirstChild("Rebirth")
+    if rebirthEvent and rebirthEvent:IsA("RemoteEvent") then return rebirthEvent end
+    local fallback = rs:FindFirstChild("Rebirth", true)
+    if fallback and fallback:IsA("RemoteEvent") then return fallback end
+    return nil
+end
+
+function RebirthComponent.fireRebirth()
+    local remote = RebirthComponent.getRebirthRemote()
+    if remote then
+        local ok = pcall(function() remote:FireServer() end)
+        return ok
+    end
+    return false
+end
+
+function RebirthComponent.findEggByName(eggName)
+    local folder = ServiceManager.RenderedEggsFolder
+    if not folder then return nil end
+    local query = eggName:lower():match("^%s*(.-)%s*$")
+    local now = os.clock()
+    for _, egg in ipairs(folder:GetChildren()) do
+        local cd = StateStore.eggCooldowns[egg]
+        local onCooldown = (cd and now <= cd)
+        if not onCooldown and Utils.isValidEgg(egg) then
+            local n = egg.Name:lower()
+            if n == query or string.find(n, query, 1, true) or string.find(query, n, 1, true) then return egg end
+        end
+    end
+    for _, egg in ipairs(folder:GetChildren()) do
+        if Utils.isValidEgg(egg) then
+            local n = egg.Name:lower()
+            if n == query or string.find(n, query, 1, true) or string.find(query, n, 1, true) then return egg end
+        end
+    end
+    return nil
+end
+
+function RebirthComponent.scanMissingEggs()
+    local missing = {}
+    local seen = {}
+    local playerGui = ServiceManager.LocalPlayer:FindFirstChild("PlayerGui")
+    if not playerGui then return missing end
+
+    local function checkRebirthContainer(container)
+        if not container then return end
+        for _, item in ipairs(container:GetDescendants()) do
+            if item:IsA("TextLabel") then
+                local text = item.Text
+                if string.find(text, "^%s*0%s*/%s*%d+") or string.find(text, "%s+0%s*/%s*%d+") then
+                    local parent = item.Parent
+                    local eggCandidate = nil
+                    if parent then
+                        if Utils.isKnownEggName(parent.Name) then
+                            eggCandidate = parent.Name
+                        else
+                            for _, sib in ipairs(parent:GetChildren()) do
+                                if sib:IsA("TextLabel") and sib ~= item then
+                                    local st = sib.Text:match("^%s*(.-)%s*$")
+                                    if st and #st > 0 and Utils.isKnownEggName(st) then
+                                        eggCandidate = st
+                                        break
                                     end
                                 end
                             end
-                            if candidate and not seen[candidate:lower()] then
-                                seen[candidate:lower()] = true
-                                table.insert(missing, candidate)
+                        end
+                    end
+                    if eggCandidate and not seen[eggCandidate:lower()] then
+                        seen[eggCandidate:lower()] = true
+                        table.insert(missing, eggCandidate)
+                    end
+                end
+            end
+        end
+    end
+
+    local main = playerGui:FindFirstChild("Main")
+    if main then
+        for _, child in ipairs(main:GetChildren()) do
+            if string.find(child.Name:lower(), "rebirth", 1, true) then checkRebirthContainer(child) end
+        end
+        local frames = main:FindFirstChild("Frames")
+        if frames then
+            for _, child in ipairs(frames:GetChildren()) do
+                if string.find(child.Name:lower(), "rebirth", 1, true) then checkRebirthContainer(child) end
+            end
+        end
+    end
+    for _, gui in ipairs(playerGui:GetChildren()) do
+        if gui:IsA("ScreenGui") and string.find(gui.Name:lower(), "rebirth", 1, true) then
+            checkRebirthContainer(gui)
+        end
+    end
+
+    if #missing == 0 and main then
+        local rebirthFrame = main:FindFirstChild("Rebirth", true) or main:FindFirstChild("RebirthFrame", true)
+        if rebirthFrame then
+            for _, desc in ipairs(rebirthFrame:GetDescendants()) do
+                if desc:IsA("Frame") or desc:IsA("ImageLabel") or desc:IsA("TextLabel") then
+                    local n = desc.Name
+                    if Utils.isKnownEggName(n) and not seen[n:lower()] then
+                        local isDone = false
+                        for _, child in ipairs(desc:GetDescendants()) do
+                            if child:IsA("TextLabel") and string.find(child.Text, "^%s*[1-9]%d*%s*/") then
+                                isDone = true break
                             end
+                            if child:IsA("ImageLabel") and (string.find(child.Name:lower(), "check", 1, true) or string.find(child.Name:lower(), "done", 1, true)) and child.Visible then
+                                isDone = true break
+                            end
+                        end
+                        if not isDone then
+                            seen[n:lower()] = true
+                            table.insert(missing, n)
                         end
                     end
                 end
             end
         end
-
-        local main = pg:FindFirstChild("Main")
-        if main then
-            for _, c in ipairs(main:GetChildren()) do
-                if string.find(c.Name:lower(), "rebirth", 1, true) then collect(c) end
-            end
-            local frames = main:FindFirstChild("Frames")
-            if frames then
-                for _, c in ipairs(frames:GetChildren()) do
-                    if string.find(c.Name:lower(), "rebirth", 1, true) then collect(c) end
-                end
-            end
-        end
-        for _, g in ipairs(pg:GetChildren()) do
-            if g:IsA("ScreenGui") and string.find(g.Name:lower(), "rebirth", 1, true) then
-                collect(g)
-            end
-        end
-        return missing
     end
+    StateStore.missingRebirthEggs = missing
+    return missing
+end
 
-    function Rebirth.stop()
-        State.autoRebirthActive = false
-        Movement.stop()
-        local t = State.threads.autoRebirth
-        if t then
-            pcall(function() task.cancel(t) end)
-            State.threads.autoRebirth = nil
-        end
-    end
-
-    function Rebirth.start()
-        Rebirth.stop()
-        State.autoRebirthActive = true
-        local gen = State._generation
-        State.threads.autoRebirth = task.spawn(function()
-            while State.autoRebirthActive and State._generation == gen do
-                Bus.emit("status", "Checking Rebirth...", Config.Colors.AccentGold)
-                Rebirth.fire()
-                task.wait(0.6)
-                local missing = Rebirth.scanMissing()
-                if #missing == 0 then
-                    Bus.emit("status", "Requirements met!", Config.Colors.AccentGreen)
-                    task.wait(1.2)
-                    Rebirth.fire()
-                    task.wait(1.5)
-                else
-                    Bus.emit("status",
-                             "Need: ["..table.concat(missing, ", ").."]",
-                             Config.Colors.AccentBlue)
-                    for _, eggName in ipairs(missing) do
-                        if not State.autoRebirthActive then break end
-                        local target = Rebirth.findEggByName(eggName)
-                        if target then
-                            Bus.emit("status", "Hunting "..target.Name, Config.Colors.AccentGreen)
-                            if Movement.moveTo(target)
-                                and State.autoRebirthActive
-                                and Util.isValidEgg(target) then
-                                Bus.emit("status", "Collecting "..target.Name.."...",
-                                         Config.Colors.AccentGold)
-                                Interaction.trigger(target, Config.Farm.AutoFarmHoldTime)
-                                State.eggCooldowns[target] =
-                                    os.clock() + Config.Farm.EggCooldown
-                                task.wait(0.3)
-                                Bus.emit("status", "Depositing...", Config.Colors.AccentBlue)
-                                Movement.stop()
-                                if Plot.teleportAndDeposit() then
-                                    Farm.recordHistory(target.Name)
-                                    Bus.emit("status", "Deposited! Rebirthing...",
-                                             Config.Colors.AccentGreen)
-                                    task.wait(0.5)
-                                    Rebirth.fire()
-                                    task.wait(0.8)
-                                end
-                            end
-                        else
-                            Bus.emit("status",
-                                     "Waiting for "..eggName.."...",
-                                     Config.Colors.TextSecondary)
-                            task.wait(1.0)
-                        end
-                    end
-                end
-                task.wait(0.5)
-            end
-            State.threads.autoRebirth = nil
-            State.autoRebirthActive = false
-        end)
+function RebirthComponent.stopAutoRebirth()
+    StateStore.autoRebirthActive = false
+    MovementComponent.stop()
+    if StateStore.autoRebirthThread then
+        pcall(function() task.cancel(StateStore.autoRebirthThread) end)
+        StateStore.autoRebirthThread = nil
     end
 end
 
---==================================================
--- [13] UI — widgets
---==================================================
-local UI = {}
+function RebirthComponent.startAutoRebirth(statusUpdater, stopButtonUpdater)
+    RebirthComponent.stopAutoRebirth()
+    StateStore.autoRebirthActive = true
+    if stopButtonUpdater then stopButtonUpdater(true) end
 
-local C = Config.Colors
-local R = Config.UI.Radius
-local T = Config.UI.Text
-local P = Config.UI.Pad
+    StateStore.autoRebirthThread = task.spawn(function()
+        while StateStore.autoRebirthActive do
+            if statusUpdater then statusUpdater("Checking Rebirth Status...", AppConfig.AccentGold) end
+            RebirthComponent.fireRebirth()
+            task.wait(0.6)
+            local missing = RebirthComponent.scanMissingEggs()
 
-function UI.applyCard(frame, radius, bg, stroke, strokeTrans)
-    frame.BackgroundColor3 = bg or C.OuterCard
-    frame.BackgroundTransparency = Config.Colors.OuterTransparency
+            if #missing == 0 then
+                if statusUpdater then statusUpdater("Requirements Met / Rebirth Fired!", AppConfig.AccentGreen) end
+                task.wait(1.2)
+                RebirthComponent.fireRebirth()
+                task.wait(1.5)
+            else
+                local missingSummary = table.concat(missing, ", ")
+                if statusUpdater then statusUpdater("Rebirth Needs: [" .. missingSummary .. "]", AppConfig.AccentBlue) end
+                for _, eggName in ipairs(missing) do
+                    if not StateStore.autoRebirthActive then break end
+                    local targetEgg = RebirthComponent.findEggByName(eggName)
+                    if targetEgg then
+                        if statusUpdater then statusUpdater("Rebirth Hunting: " .. targetEgg.Name, AppConfig.AccentGreen) end
+                        local arrived = MovementComponent.moveTo(targetEgg)
+                        if arrived and StateStore.autoRebirthActive and Utils.isValidEgg(targetEgg) then
+                            if statusUpdater then statusUpdater("Collecting " .. targetEgg.Name .. "...", AppConfig.AccentGold) end
+                            InteractionComponent.trigger(targetEgg, AppConfig.AutoFarmHoldTime)
+                            StateStore.eggCooldowns[targetEgg] = os.clock() + AppConfig.EggCooldownSeconds
+                            task.wait(0.3)
+                            if statusUpdater then statusUpdater("Depositing Rebirth Egg at Home...", AppConfig.AccentBlue) end
+                            MovementComponent.stop()
+                            local ok = PlotComponent.teleportAndDeposit()
+                            if ok then
+                                StateStore.addHistoryRecord(targetEgg.Name)
+                                if statusUpdater then statusUpdater("Deposited! Rebirthing...", AppConfig.AccentGreen) end
+                                task.wait(0.5)
+                                RebirthComponent.fireRebirth()
+                                task.wait(0.8)
+                            end
+                        end
+                    else
+                        if statusUpdater then statusUpdater("Waiting for " .. eggName .. " to spawn...", AppConfig.TextSecondary) end
+                        task.wait(1.0)
+                    end
+                end
+            end
+            task.wait(0.5)
+        end
+        StateStore.autoRebirthThread = nil
+        StateStore.autoRebirthActive = false
+    end)
+end
+
+--==================================================
+-- [12] COMPONENT: UIComponent
+--==================================================
+local UIComponent = {}
+
+function UIComponent.getStroke(frame)
+    return frame and frame:FindFirstChildWhichIsA("UIStroke")
+end
+
+function UIComponent.applyCard(frame, cornerRadius, bgColor, strokeColor, strokeTransparency)
+    frame.BackgroundColor3 = bgColor or AppConfig.OuterCardBg
+    frame.BackgroundTransparency = AppConfig.OuterCardTransparency
     frame.BorderSizePixel = 0
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius or R.R2XL)
+    corner.CornerRadius = UDim.new(0, cornerRadius or AppConfig.Radius2XL)
     corner.Parent = frame
-    local s = Instance.new("UIStroke")
-    s.Color = stroke or C.CardBorder
-    s.Transparency = strokeTrans or C.BorderTransparency
-    s.Thickness = 1
-    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    s.Parent = frame
-    return corner, s
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = strokeColor or AppConfig.CardBorder
+    stroke.Transparency = strokeTransparency or AppConfig.BorderTransparency
+    stroke.Thickness = 1
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = frame
+    return corner, stroke
 end
 
-function UI.styleButton(btn, radius, normalBg, hoverBg)
+function UIComponent.styleButton(button, customRadius, normalBg, hoverBg)
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius or R.RLG)
-    corner.Parent = btn
-    local s = Instance.new("UIStroke")
-    s.Color = C.BorderInner
-    s.Transparency = 0.55
-    s.Thickness = 1
-    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    s.Parent = btn
-    btn.AutoButtonColor = false
-    btn:SetAttribute("DefaultBg", normalBg or btn.BackgroundColor3)
-    local hv = hoverBg or Color3.fromRGB(44, 44, 44)
-    btn.MouseEnter:Connect(function()
-        Util.tween(btn, { BackgroundColor3 = hv }, 0.12)
-        Util.tween(s,   { Transparency = 0.25, Color = Color3.fromRGB(75, 75, 75) }, 0.12)
+    corner.CornerRadius = UDim.new(0, customRadius or AppConfig.RadiusLG)
+    corner.Parent = button
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = AppConfig.BorderInner
+    stroke.Transparency = 0.55
+    stroke.Thickness = 1
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = button
+
+    button.AutoButtonColor = false
+    button:SetAttribute("DefaultBg", normalBg or button.BackgroundColor3)
+    local targetHoverBg = hoverBg or Color3.fromRGB(44, 44, 44)
+
+    button.MouseEnter:Connect(function()
+        Utils.tween(button, { BackgroundColor3 = targetHoverBg }, 0.12)
+        Utils.tween(stroke, { Transparency = 0.25, Color = Color3.fromRGB(75, 75, 75) }, 0.12)
     end)
-    btn.MouseLeave:Connect(function()
-        local bg = btn:GetAttribute("DefaultBg") or C.NestedCard
-        Util.tween(btn, { BackgroundColor3 = bg }, 0.12)
-        Util.tween(s,   { Transparency = 0.55, Color = C.BorderInner }, 0.12)
+    button.MouseLeave:Connect(function()
+        local bg = button:GetAttribute("DefaultBg") or AppConfig.NestedCardBg
+        Utils.tween(button, { BackgroundColor3 = bg }, 0.12)
+        Utils.tween(stroke, { Transparency = 0.55, Color = AppConfig.BorderInner }, 0.12)
     end)
 end
 
-function UI.setButtonDefault(btn, color)
-    if not btn then return end
-    btn:SetAttribute("DefaultBg", color)
-    btn.BackgroundColor3 = color
+function UIComponent.setButtonDefault(button, color)
+    if not button then return end
+    button:SetAttribute("DefaultBg", color)
+    button.BackgroundColor3 = color
 end
 
--- Slider drag dispatcher (single pair of global listeners)
-do
-    local activeSliders = {}
-    local moved = Services.UserInputService.InputChanged
-    local ended = Services.UserInputService.InputEnded
-    moved:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch then
-            for _, cb in pairs(activeSliders) do cb(input) end
-        end
+function UIComponent.styleInput(textBox, customRadius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, customRadius or AppConfig.RadiusLG)
+    corner.Parent = textBox
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = AppConfig.BorderInner
+    stroke.Transparency = 0.55
+    stroke.Thickness = 1
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = textBox
+    textBox.Focused:Connect(function()
+        Utils.tween(stroke, { Color = AppConfig.AccentGreen, Transparency = 0.2 }, 0.15)
     end)
-    ended:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-            table.clear(activeSliders)
-        end
+    textBox.FocusLost:Connect(function()
+        Utils.tween(stroke, { Color = AppConfig.BorderInner, Transparency = 0.55 }, 0.15)
     end)
-    UI._activeSliders = activeSliders
 end
 
-function UI.createToggle(parent, titleText, descText, initialValue, onToggle)
+local activeSliders = {}
+ServiceManager.UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        for _, cb in pairs(activeSliders) do cb(input) end
+    end
+end)
+ServiceManager.UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        table.clear(activeSliders)
+    end
+end)
+
+function UIComponent.createToggle(parent, titleText, descText, initialValue, onToggle)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -4, 0, 52)
-    frame.BackgroundColor3 = C.NestedCard
+    frame.BackgroundColor3 = AppConfig.NestedCardBg
     frame.Parent = parent
-    UI.applyCard(frame, R.RXL, C.NestedCard, C.BorderInner)
+    UIComponent.applyCard(frame, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, -80, 0, 20)
     title.Position = UDim2.new(0, 14, 0, 8)
     title.BackgroundTransparency = 1
     title.Text = titleText
-    title.TextColor3 = C.TextPrimary
-    title.TextSize = T.Body
+    title.TextColor3 = AppConfig.TextPrimary
+    title.TextSize = AppConfig.TextBody
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.Parent = frame
@@ -1260,81 +2201,74 @@ function UI.createToggle(parent, titleText, descText, initialValue, onToggle)
     desc.Position = UDim2.new(0, 14, 0, 28)
     desc.BackgroundTransparency = 1
     desc.Text = descText or ""
-    desc.TextColor3 = C.TextMuted
-    desc.TextSize = T.Micro
+    desc.TextColor3 = AppConfig.TextMuted
+    desc.TextSize = AppConfig.TextMicro
     desc.Font = Enum.Font.GothamMedium
     desc.TextXAlignment = Enum.TextXAlignment.Left
     desc.Parent = frame
 
-    local track = Instance.new("TextButton")
-    track.Size = UDim2.new(0, 44, 0, 24)
-    track.Position = UDim2.new(1, -58, 0.5, -12)
-    track.BackgroundColor3 = initialValue and C.AccentGreen or Color3.fromRGB(40, 40, 40)
-    track.Text = ""
-    track.AutoButtonColor = false
-    track.Parent = frame
+    local toggleTrack = Instance.new("TextButton")
+    toggleTrack.Size = UDim2.new(0, 44, 0, 24)
+    toggleTrack.Position = UDim2.new(1, -58, 0.5, -12)
+    toggleTrack.BackgroundColor3 = initialValue and AppConfig.AccentGreen or Color3.fromRGB(40, 40, 40)
+    toggleTrack.Text = ""
+    toggleTrack.AutoButtonColor = false
+    toggleTrack.Parent = frame
 
-    local tc = Instance.new("UICorner")
-    tc.CornerRadius = UDim.new(1, 0)
-    tc.Parent = track
+    local trackCorner = Instance.new("UICorner")
+    trackCorner.CornerRadius = UDim.new(1, 0)
+    trackCorner.Parent = toggleTrack
 
     local knob = Instance.new("Frame")
     knob.Size = UDim2.new(0, 18, 0, 18)
-    knob.Position = initialValue and UDim2.new(1, -21, 0.5, -9)
-        or UDim2.new(0, 3, 0.5, -9)
-    knob.BackgroundColor3 = Color3.new(1, 1, 1)
-    knob.Parent = track
+    knob.Position = initialValue and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knob.Parent = toggleTrack
 
-    local kc = Instance.new("UICorner")
-    kc.CornerRadius = UDim.new(1, 0)
-    kc.Parent = knob
+    local knobCorner = Instance.new("UICorner")
+    knobCorner.CornerRadius = UDim.new(1, 0)
+    knobCorner.Parent = knob
 
     local state = initialValue
-    track.MouseButton1Click:Connect(function()
+    toggleTrack.MouseButton1Click:Connect(function()
         state = not state
-        Utils_or_localTween(track, {
-            BackgroundColor3 = state and C.AccentGreen or Color3.fromRGB(40, 40, 40)
-        }, 0.15)
-        Utils_or_localTween(knob, {
-            Position = state and UDim2.new(1, -21, 0.5, -9)
-                or UDim2.new(0, 3, 0.5, -9)
-        }, 0.15)
+        local targetTrackColor = state and AppConfig.AccentGreen or Color3.fromRGB(40, 40, 40)
+        local targetKnobPos = state and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)
+        Utils.tween(toggleTrack, { BackgroundColor3 = targetTrackColor }, 0.15)
+        Utils.tween(knob, { Position = targetKnobPos }, 0.15)
         if onToggle then onToggle(state) end
     end)
     return frame
 end
 
--- helper: keep local binding so createToggle doesn't depend on forward decl
-local function Utils_or_localTween(o, p, d) return Util.tween(o, p, d) end
-
-function UI.createSlider(parent, titleText, minVal, maxVal, defaultVal, unitStr, onChange)
+function UIComponent.createSlider(parent, titleText, minVal, maxVal, defaultVal, unitStr, onChange)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -4, 0, 60)
-    frame.BackgroundColor3 = C.NestedCard
+    frame.BackgroundColor3 = AppConfig.NestedCardBg
     frame.Parent = parent
-    UI.applyCard(frame, R.RXL, C.NestedCard, C.BorderInner)
+    UIComponent.applyCard(frame, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(0.6, 0, 0, 20)
     title.Position = UDim2.new(0, 14, 0, 8)
     title.BackgroundTransparency = 1
     title.Text = titleText
-    title.TextColor3 = C.TextPrimary
-    title.TextSize = T.Body
+    title.TextColor3 = AppConfig.TextPrimary
+    title.TextSize = AppConfig.TextBody
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.Parent = frame
 
-    local valLbl = Instance.new("TextLabel")
-    valLbl.Size = UDim2.new(0.35, -14, 0, 20)
-    valLbl.Position = UDim2.new(0.65, 0, 0, 8)
-    valLbl.BackgroundTransparency = 1
-    valLbl.Text = tostring(defaultVal).." "..(unitStr or "")
-    valLbl.TextColor3 = C.AccentBlue
-    valLbl.TextSize = T.Caption
-    valLbl.Font = Enum.Font.GothamBold
-    valLbl.TextXAlignment = Enum.TextXAlignment.Right
-    valLbl.Parent = frame
+    local valLabel = Instance.new("TextLabel")
+    valLabel.Size = UDim2.new(0.35, -14, 0, 20)
+    valLabel.Position = UDim2.new(0.65, 0, 0, 8)
+    valLabel.BackgroundTransparency = 1
+    valLabel.Text = string.format("%s %s", tostring(defaultVal), unitStr or "")
+    valLabel.TextColor3 = AppConfig.AccentBlue
+    valLabel.TextSize = AppConfig.TextCaption
+    valLabel.Font = Enum.Font.GothamBold
+    valLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valLabel.Parent = frame
 
     local track = Instance.new("TextButton")
     track.Size = UDim2.new(1, -28, 0, 6)
@@ -1344,188 +2278,189 @@ function UI.createSlider(parent, titleText, minVal, maxVal, defaultVal, unitStr,
     track.AutoButtonColor = false
     track.Parent = frame
 
-    local tcorner = Instance.new("UICorner")
-    tcorner.CornerRadius = UDim.new(1, 0)
-    tcorner.Parent = track
+    local trackCorner = Instance.new("UICorner")
+    trackCorner.CornerRadius = UDim.new(1, 0)
+    trackCorner.Parent = track
 
     local pct = math.clamp((defaultVal - minVal) / (maxVal - minVal), 0, 1)
+
     local fill = Instance.new("Frame")
     fill.Size = UDim2.new(pct, 0, 1, 0)
-    fill.BackgroundColor3 = C.AccentBlue
+    fill.BackgroundColor3 = AppConfig.AccentBlue
     fill.BorderSizePixel = 0
     fill.Parent = track
 
-    local fcorner = Instance.new("UICorner")
-    fcorner.CornerRadius = UDim.new(1, 0)
-    fcorner.Parent = fill
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(1, 0)
+    fillCorner.Parent = fill
 
     local thumb = Instance.new("Frame")
     thumb.Size = UDim2.new(0, 14, 0, 14)
     thumb.Position = UDim2.new(1, -7, 0.5, -7)
-    thumb.BackgroundColor3 = Color3.new(1, 1, 1)
+    thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     thumb.Parent = fill
 
-    local thcorner = Instance.new("UICorner")
-    thcorner.CornerRadius = UDim.new(1, 0)
-    thcorner.Parent = thumb
+    local thumbCorner = Instance.new("UICorner")
+    thumbCorner.CornerRadius = UDim.new(1, 0)
+    thumbCorner.Parent = thumb
 
-    local sliderId = tostring({})
-    local function update(input)
-        local pos = input.Position.X
-        local tpos = track.AbsolutePosition.X
-        local tw = track.AbsoluteSize.X
-        if tw <= 0 then return end
-        local rel = math.clamp((pos - tpos) / tw, 0, 1)
-        local val = math.floor(minVal + (maxVal - minVal) * rel + 0.5)
-        fill.Size = UDim2.new(rel, 0, 1, 0)
-        valLbl.Text = tostring(val).." "..(unitStr or "")
+    StateStore._sliderCounter = StateStore._sliderCounter + 1
+    local sliderId = "slider_" .. tostring(StateStore._sliderCounter)
+
+    local function updateFromInput(input)
+        local inputPos = input.Position.X
+        local trackPos = track.AbsolutePosition.X
+        local trackWidth = track.AbsoluteSize.X
+        if trackWidth <= 0 then return end
+        local relX = math.clamp((inputPos - trackPos) / trackWidth, 0, 1)
+        local val = math.floor(minVal + (maxVal - minVal) * relX + 0.5)
+        fill.Size = UDim2.new(relX, 0, 1, 0)
+        valLabel.Text = string.format("%s %s", tostring(val), unitStr or "")
         if onChange then onChange(val) end
     end
 
     track.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-            UI._activeSliders[sliderId] = update
-            update(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            activeSliders[sliderId] = updateFromInput
+            updateFromInput(input)
         end
     end)
-    Services.UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-            UI._activeSliders[sliderId] = nil
+    ServiceManager.UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            activeSliders[sliderId] = nil
         end
     end)
+
     return frame
 end
 
---==================================================
--- [14] UI — main menu mount
---==================================================
-function UI.mount()
-    local parent = Services.TargetParent
-    if not parent then return nil end
-    local old = parent:FindFirstChild("RenderedEggsESP_Menu")
+function UIComponent.mount()
+    local old = ServiceManager.TargetParent:FindFirstChild("RenderedEggsESP_Menu")
     if old then pcall(function() old:Destroy() end) end
 
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "RenderedEggsESP_Menu"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.Parent = parent
-    State.screenGui = ScreenGui
+    ScreenGui.Parent = ServiceManager.TargetParent
+    StateStore.screenGui = ScreenGui
 
-    local function updateStatus(text, color)
-        Bus.emit("status", text, color)
-    end
+    ScreenGui.Destroying:Connect(function()
+        StateStore.onHistoryUpdated = nil
+        StateStore.onTimeUpdated = nil
+        StateStore.screenGui = nil
+    end)
 
-    -- Alert stack --
     local AlertStack = Instance.new("Frame")
     AlertStack.Name = "AlertStack"
     AlertStack.Size = UDim2.new(0, 320, 0, 260)
     AlertStack.Position = UDim2.new(1, -335, 0, 20)
     AlertStack.BackgroundTransparency = 1
     AlertStack.Parent = ScreenGui
+
     local AlertLayout = Instance.new("UIListLayout")
     AlertLayout.SortOrder = Enum.SortOrder.LayoutOrder
     AlertLayout.Padding = UDim.new(0, 8)
     AlertLayout.Parent = AlertStack
 
-    -- Device selection --
+    -- DEVICE SELECTION MODAL
     local DeviceFrame = Instance.new("Frame")
     DeviceFrame.Name = "DeviceSelectionFrame"
     DeviceFrame.Size = UDim2.new(0, 340, 0, 170)
     DeviceFrame.Position = UDim2.new(0.5, -170, 0.5, -85)
-    DeviceFrame.BackgroundColor3 = C.Bg
-    DeviceFrame.BackgroundTransparency = C.BgTransparency
+    DeviceFrame.BackgroundColor3 = AppConfig.BgColor
+    DeviceFrame.BackgroundTransparency = AppConfig.BgTransparency
     DeviceFrame.BorderSizePixel = 0
     DeviceFrame.Active = true
     DeviceFrame.Parent = ScreenGui
-    UI.applyCard(DeviceFrame, R.R2XL, C.Bg, C.CardBorder)
+    UIComponent.applyCard(DeviceFrame, AppConfig.Radius2XL, AppConfig.BgColor, AppConfig.CardBorder)
 
     local DeviceInner = Instance.new("Frame")
     DeviceInner.Size = UDim2.new(1, -16, 1, -16)
     DeviceInner.Position = UDim2.new(0, 8, 0, 8)
     DeviceInner.Parent = DeviceFrame
-    UI.applyCard(DeviceInner, R.RXL, C.OuterCard, C.BorderInner)
+    UIComponent.applyCard(DeviceInner, AppConfig.RadiusXL, AppConfig.OuterCardBg, AppConfig.BorderInner)
 
-    local dTitle = Instance.new("TextLabel")
-    dTitle.Size = UDim2.new(1, 0, 0, 30)
-    dTitle.Position = UDim2.new(0, 0, 0, 14)
-    dTitle.BackgroundTransparency = 1
-    dTitle.Text = "Select Device / เลือกอุปกรณ์"
-    dTitle.TextColor3 = C.TextPrimary
-    dTitle.TextSize = T.Title
-    dTitle.Font = Enum.Font.GothamBold
-    dTitle.Parent = DeviceInner
+    local DeviceTitle = Instance.new("TextLabel")
+    DeviceTitle.Size = UDim2.new(1, 0, 0, 30)
+    DeviceTitle.Position = UDim2.new(0, 0, 0, 14)
+    DeviceTitle.BackgroundTransparency = 1
+    DeviceTitle.Text = "Select Device / เลือกอุปกรณ์"
+    DeviceTitle.TextColor3 = AppConfig.TextPrimary
+    DeviceTitle.TextSize = AppConfig.TextTitle
+    DeviceTitle.Font = Enum.Font.GothamBold
+    DeviceTitle.Parent = DeviceInner
 
-    local dSub = Instance.new("TextLabel")
-    dSub.Size = UDim2.new(1, 0, 0, 16)
-    dSub.Position = UDim2.new(0, 0, 0, 40)
-    dSub.BackgroundTransparency = 1
-    dSub.Text = "Sidebar Navigation • Nested Card Architecture"
-    dSub.TextColor3 = C.TextMuted
-    dSub.TextSize = T.Caption
-    dSub.Font = Enum.Font.GothamMedium
-    dSub.Parent = DeviceInner
+    local DeviceSub = Instance.new("TextLabel")
+    DeviceSub.Size = UDim2.new(1, 0, 0, 16)
+    DeviceSub.Position = UDim2.new(0, 0, 0, 40)
+    DeviceSub.BackgroundTransparency = 1
+    DeviceSub.Text = "Sidebar Navigation • Nested Card Architecture"
+    DeviceSub.TextColor3 = AppConfig.TextMuted
+    DeviceSub.TextSize = AppConfig.TextCaption
+    DeviceSub.Font = Enum.Font.GothamMedium
+    DeviceSub.Parent = DeviceInner
 
     local PCBtn = Instance.new("TextButton")
     PCBtn.Size = UDim2.new(0.5, -14, 0, 48)
     PCBtn.Position = UDim2.new(0, 10, 0, 76)
-    PCBtn.BackgroundColor3 = C.NestedCard
+    PCBtn.BackgroundColor3 = AppConfig.NestedCardBg
     PCBtn.Text = "💻  PC Mode"
-    PCBtn.TextColor3 = C.TextPrimary
-    PCBtn.TextSize = T.Header
+    PCBtn.TextColor3 = AppConfig.TextPrimary
+    PCBtn.TextSize = AppConfig.TextHeader
     PCBtn.Font = Enum.Font.GothamBold
     PCBtn.Parent = DeviceInner
-    UI.styleButton(PCBtn, R.RLG, C.NestedCard)
+    UIComponent.styleButton(PCBtn, AppConfig.RadiusLG, AppConfig.NestedCardBg)
 
     local MobileBtn = Instance.new("TextButton")
     MobileBtn.Size = UDim2.new(0.5, -14, 0, 48)
     MobileBtn.Position = UDim2.new(0.5, 4, 0, 76)
-    MobileBtn.BackgroundColor3 = C.NestedCard
+    MobileBtn.BackgroundColor3 = AppConfig.NestedCardBg
     MobileBtn.Text = "📱  Mobile"
-    MobileBtn.TextColor3 = C.TextPrimary
-    MobileBtn.TextSize = T.Header
+    MobileBtn.TextColor3 = AppConfig.TextPrimary
+    MobileBtn.TextSize = AppConfig.TextHeader
     MobileBtn.Font = Enum.Font.GothamBold
     MobileBtn.Parent = DeviceInner
-    UI.styleButton(MobileBtn, R.RLG, C.NestedCard)
+    UIComponent.styleButton(MobileBtn, AppConfig.RadiusLG, AppConfig.NestedCardBg)
 
-    -- Main window --
+    -- MAIN WINDOW
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, Config.UI.PC.W, 0, Config.UI.PC.H)
-    MainFrame.Position = UDim2.new(0.5, -Config.UI.PC.W/2, 0.5, -Config.UI.PC.H/2)
-    MainFrame.BackgroundColor3 = C.Bg
-    MainFrame.BackgroundTransparency = C.BgTransparency
+    MainFrame.Size = UDim2.new(0, AppConfig.PCWidth, 0, AppConfig.PCHeight)
+    MainFrame.Position = UDim2.new(0.5, -AppConfig.PCWidth / 2, 0.5, -AppConfig.PCHeight / 2)
+    MainFrame.BackgroundColor3 = AppConfig.BgColor
+    MainFrame.BackgroundTransparency = AppConfig.BgTransparency
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
     MainFrame.Visible = false
     MainFrame.ClipsDescendants = true
     MainFrame.Parent = ScreenGui
-    UI.applyCard(MainFrame, R.R2XL, C.Bg, C.CardBorder)
+    UIComponent.applyCard(MainFrame, AppConfig.Radius2XL, AppConfig.BgColor, AppConfig.CardBorder)
 
     local TopBar = Instance.new("Frame")
     TopBar.Name = "TopBar"
     TopBar.Size = UDim2.new(1, 0, 0, 46)
+    TopBar.BackgroundColor3 = AppConfig.BgColor
     TopBar.BackgroundTransparency = 1
+    TopBar.BorderSizePixel = 0
     TopBar.Parent = MainFrame
 
-    local topDiv = Instance.new("Frame")
-    topDiv.Size = UDim2.new(1, -24, 0, 1)
-    topDiv.Position = UDim2.new(0, 12, 1, -1)
-    topDiv.BackgroundColor3 = C.BorderInner
-    topDiv.BackgroundTransparency = 0.4
-    topDiv.BorderSizePixel = 0
-    topDiv.Parent = TopBar
+    local TopDivider = Instance.new("Frame")
+    TopDivider.Size = UDim2.new(1, -24, 0, 1)
+    TopDivider.Position = UDim2.new(0, 12, 1, -1)
+    TopDivider.BackgroundColor3 = AppConfig.BorderInner
+    TopDivider.BackgroundTransparency = 0.4
+    TopDivider.BorderSizePixel = 0
+    TopDivider.Parent = TopBar
 
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Size = UDim2.new(0, 320, 0, 20)
     TitleLabel.Position = UDim2.new(0, 16, 0, 8)
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = "Eggs ESP Pro"
+    TitleLabel.Text = "EGGS ESP  <font color='#00e676'>PRO</font>"
     TitleLabel.RichText = true
-    TitleLabel.TextColor3 = C.TextPrimary
-    TitleLabel.TextSize = T.Title
+    TitleLabel.TextColor3 = AppConfig.TextPrimary
+    TitleLabel.TextSize = AppConfig.TextTitle
     TitleLabel.Font = Enum.Font.GothamBold
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TopBar
@@ -1534,9 +2469,9 @@ function UI.mount()
     SubLabel.Size = UDim2.new(0, 320, 0, 14)
     SubLabel.Position = UDim2.new(0, 16, 0, 27)
     SubLabel.BackgroundTransparency = 1
-    SubLabel.Text = "v"..Config.Version.." • rebalanced"
-    SubLabel.TextColor3 = C.TextMuted
-    SubLabel.TextSize = T.Micro
+    SubLabel.Text = "v" .. AppConfig.Version .. " • Sidebar Tabs & Nested Cards"
+    SubLabel.TextColor3 = AppConfig.TextMuted
+    SubLabel.TextSize = AppConfig.TextMicro
     SubLabel.Font = Enum.Font.GothamMedium
     SubLabel.TextXAlignment = Enum.TextXAlignment.Left
     SubLabel.Parent = TopBar
@@ -1544,52 +2479,64 @@ function UI.mount()
     local QuickStatusPill = Instance.new("Frame")
     QuickStatusPill.Size = UDim2.new(0, 160, 0, 26)
     QuickStatusPill.Position = UDim2.new(1, -300, 0.5, -13)
-    QuickStatusPill.BackgroundColor3 = C.OuterCard
+    QuickStatusPill.BackgroundColor3 = AppConfig.OuterCardBg
     QuickStatusPill.Parent = TopBar
-    UI.applyCard(QuickStatusPill, R.RMD, C.OuterCard, C.BorderInner)
+    UIComponent.applyCard(QuickStatusPill, AppConfig.RadiusMD, AppConfig.OuterCardBg, AppConfig.BorderInner)
 
     local StatusDot = Instance.new("Frame")
     StatusDot.Size = UDim2.new(0, 6, 0, 6)
     StatusDot.Position = UDim2.new(0, 10, 0.5, -3)
-    StatusDot.BackgroundColor3 = C.AccentGreen
+    StatusDot.BackgroundColor3 = AppConfig.AccentGreen
     StatusDot.BorderSizePixel = 0
     StatusDot.Parent = QuickStatusPill
-    local dotC = Instance.new("UICorner")
-    dotC.CornerRadius = UDim.new(1, 0)
-    dotC.Parent = StatusDot
+
+    local DotCorner = Instance.new("UICorner")
+    DotCorner.CornerRadius = UDim.new(1, 0)
+    DotCorner.Parent = StatusDot
 
     local StatusLabel = Instance.new("TextLabel")
     StatusLabel.Size = UDim2.new(1, -26, 1, 0)
     StatusLabel.Position = UDim2.new(0, 22, 0, 0)
     StatusLabel.BackgroundTransparency = 1
     StatusLabel.Text = "System Ready"
-    StatusLabel.TextColor3 = C.AccentGreen
-    StatusLabel.TextSize = T.Caption
+    StatusLabel.TextColor3 = AppConfig.AccentGreen
+    StatusLabel.TextSize = AppConfig.TextCaption
     StatusLabel.Font = Enum.Font.GothamMedium
     StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
     StatusLabel.TextTruncate = Enum.TextTruncate.AtEnd
     StatusLabel.Parent = QuickStatusPill
 
-    Bus.on("status", function(text, color)
+    local function updateStatus(text, color)
         StatusLabel.Text = text
-        StatusLabel.TextColor3 = color or C.TextPrimary
-        StatusDot.BackgroundColor3 = color or C.AccentGreen
-    end)
+        StatusLabel.TextColor3 = color or AppConfig.TextPrimary
+        StatusDot.BackgroundColor3 = color or AppConfig.AccentGreen
+    end
 
     local ClockPill = Instance.new("Frame")
+    ClockPill.Name = "ClockPill"
     ClockPill.Size = UDim2.new(0, 86, 0, 26)
     ClockPill.Position = UDim2.new(1, -132, 0.5, -13)
-    ClockPill.BackgroundColor3 = C.NestedCard
+    ClockPill.BackgroundColor3 = AppConfig.NestedCardBg
     ClockPill.Parent = TopBar
-    UI.applyCard(ClockPill, R.RMD, C.NestedCard, C.BorderInner)
+    UIComponent.applyCard(ClockPill, AppConfig.RadiusMD, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+    local ClockIcon = Instance.new("TextLabel")
+    ClockIcon.Size = UDim2.new(0, 18, 1, 0)
+    ClockIcon.Position = UDim2.new(0, 6, 0, 0)
+    ClockIcon.BackgroundTransparency = 1
+    ClockIcon.Text = "⏱"
+    ClockIcon.TextSize = 12
+    ClockIcon.Font = Enum.Font.GothamBold
+    ClockIcon.Parent = ClockPill
 
     local ClockLabel = Instance.new("TextLabel")
+    ClockLabel.Name = "ClockLabel"
     ClockLabel.Size = UDim2.new(1, -24, 1, 0)
     ClockLabel.Position = UDim2.new(0, 22, 0, 0)
     ClockLabel.BackgroundTransparency = 1
     ClockLabel.Text = os.date("%H:%M:%S")
-    ClockLabel.TextColor3 = C.AccentBlue
-    ClockLabel.TextSize = T.Caption
+    ClockLabel.TextColor3 = AppConfig.AccentBlue
+    ClockLabel.TextSize = AppConfig.TextCaption
     ClockLabel.Font = Enum.Font.GothamBold
     ClockLabel.TextXAlignment = Enum.TextXAlignment.Left
     ClockLabel.Parent = ClockPill
@@ -1597,40 +2544,70 @@ function UI.mount()
     local MinimizeBtn = Instance.new("TextButton")
     MinimizeBtn.Size = UDim2.new(0, 28, 0, 28)
     MinimizeBtn.Position = UDim2.new(1, -40, 0.5, -14)
-    MinimizeBtn.BackgroundColor3 = C.OuterCard
+    MinimizeBtn.BackgroundColor3 = AppConfig.OuterCardBg
     MinimizeBtn.Text = "—"
-    MinimizeBtn.TextColor3 = C.TextSecondary
+    MinimizeBtn.TextColor3 = AppConfig.TextSecondary
     MinimizeBtn.TextSize = 11
     MinimizeBtn.Font = Enum.Font.GothamBold
     MinimizeBtn.Parent = TopBar
-    UI.styleButton(MinimizeBtn, R.RMD, C.OuterCard)
+    UIComponent.styleButton(MinimizeBtn, AppConfig.RadiusMD, AppConfig.OuterCardBg)
 
-    -- Sidebar --
+    -- SIDEBAR
     local Sidebar = Instance.new("Frame")
     Sidebar.Name = "Sidebar"
-    Sidebar.Size = UDim2.new(0, Config.UI.SidebarWidth, 1, -58)
+    Sidebar.Size = UDim2.new(0, AppConfig.SidebarWidth, 1, -58)
     Sidebar.Position = UDim2.new(0, 8, 0, 50)
-    Sidebar.BackgroundColor3 = C.OuterCard
+    Sidebar.BackgroundColor3 = AppConfig.OuterCardBg
     Sidebar.Parent = MainFrame
-    UI.applyCard(Sidebar, R.RXL, C.OuterCard, C.CardBorder)
+    UIComponent.applyCard(Sidebar, AppConfig.RadiusXL, AppConfig.OuterCardBg, AppConfig.CardBorder)
 
-    local SbLayout = Instance.new("UIListLayout")
-    SbLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    SbLayout.Padding = UDim.new(0, 3)
-    SbLayout.Parent = Sidebar
+    local SidebarLayout = Instance.new("UIListLayout")
+    SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    SidebarLayout.Padding = UDim.new(0, 3)
+    SidebarLayout.Parent = Sidebar
 
-    local SbPad = Instance.new("UIPadding")
-    SbPad.PaddingTop = UDim.new(0, 8)
-    SbPad.PaddingBottom = UDim.new(0, 56)
-    SbPad.PaddingLeft = UDim.new(0, 6)
-    SbPad.PaddingRight = UDim.new(0, 6)
-    SbPad.Parent = Sidebar
+    local SidebarPadding = Instance.new("UIPadding")
+    SidebarPadding.PaddingTop = UDim.new(0, 8)
+    SidebarPadding.PaddingBottom = UDim.new(0, 56)
+    SidebarPadding.PaddingLeft = UDim.new(0, 6)
+    SidebarPadding.PaddingRight = UDim.new(0, 6)
+    SidebarPadding.Parent = Sidebar
 
-    -- Content --
+    local SidebarFooter = Instance.new("Frame")
+    SidebarFooter.Name = "SidebarFooter"
+    SidebarFooter.Size = UDim2.new(1, -12, 0, 40)
+    SidebarFooter.Position = UDim2.new(0, 6, 1, -48)
+    SidebarFooter.BackgroundColor3 = AppConfig.NestedCardBg
+    SidebarFooter.Parent = Sidebar
+    UIComponent.applyCard(SidebarFooter, AppConfig.RadiusMD, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+    local FootPC = Instance.new("TextButton")
+    FootPC.Size = UDim2.new(0.5, -3, 1, -6)
+    FootPC.Position = UDim2.new(0, 3, 0, 3)
+    FootPC.BackgroundColor3 = AppConfig.OuterCardBg
+    FootPC.Text = "💻"
+    FootPC.TextColor3 = AppConfig.TextSecondary
+    FootPC.TextSize = 12
+    FootPC.Font = Enum.Font.GothamBold
+    FootPC.Parent = SidebarFooter
+    UIComponent.styleButton(FootPC, AppConfig.RadiusSM, AppConfig.OuterCardBg)
+
+    local FootMobile = Instance.new("TextButton")
+    FootMobile.Size = UDim2.new(0.5, -3, 1, -6)
+    FootMobile.Position = UDim2.new(0.5, 0, 0, 3)
+    FootMobile.BackgroundColor3 = AppConfig.OuterCardBg
+    FootMobile.Text = "📱"
+    FootMobile.TextColor3 = AppConfig.TextSecondary
+    FootMobile.TextSize = 12
+    FootMobile.Font = Enum.Font.GothamBold
+    FootMobile.Parent = SidebarFooter
+    UIComponent.styleButton(FootMobile, AppConfig.RadiusSM, AppConfig.OuterCardBg)
+
+    -- CONTENT AREA
     local ContentArea = Instance.new("Frame")
     ContentArea.Name = "ContentArea"
-    ContentArea.Size = UDim2.new(1, -(Config.UI.SidebarWidth + 20), 1, -58)
-    ContentArea.Position = UDim2.new(0, Config.UI.SidebarWidth + 12, 0, 50)
+    ContentArea.Size = UDim2.new(1, -(AppConfig.SidebarWidth + 20), 1, -58)
+    ContentArea.Position = UDim2.new(0, AppConfig.SidebarWidth + 12, 0, 50)
     ContentArea.BackgroundTransparency = 1
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
@@ -1638,32 +2615,35 @@ function UI.mount()
     local Tabs = {
         { id = "Eggs",     label = "Eggs",       icon = "🥚" },
         { id = "Farm",     label = "Automation", icon = "⚡" },
-        { id = "Time",     label = "Time",       icon = "⏱️" },
+        { id = "Backpack", label = "Backpack",   icon = "🎒" },
         { id = "History",  label = "History",    icon = "📜" },
         { id = "Settings", label = "Settings",   icon = "⚙️" },
     }
-    local tabButtons, tabPanels = {}, {}
-    local currentTab = "Eggs"
+
+    local tabButtons = {}
+    local tabPanels = {}
+    local currentActiveTab = "Eggs"
 
     local function currentSize()
-        if State.windowMode == "PC" then
-            return Config.UI.PC.W, Config.UI.PC.H
+        if StateStore.windowMode == "PC" then
+            return AppConfig.PCWidth, AppConfig.PCHeight
+        else
+            return AppConfig.MobileWidth, AppConfig.MobileHeight
         end
-        return Config.UI.Mobile.W, Config.UI.Mobile.H
     end
 
     local function toggleMinimize()
-        State.isMinimized = not State.isMinimized
+        StateStore.isMinimized = not StateStore.isMinimized
         local w, h = currentSize()
-        if State.isMinimized then
+        if StateStore.isMinimized then
             Sidebar.Visible = false
             ContentArea.Visible = false
-            Util.tween(MainFrame, { Size = UDim2.new(0, w, 0, 46) }, 0.20)
+            Utils.tween(MainFrame, { Size = UDim2.new(0, w, 0, 46) }, 0.20)
             MinimizeBtn.Text = "+"
         else
-            Util.tween(MainFrame, { Size = UDim2.new(0, w, 0, h) }, 0.20)
+            Utils.tween(MainFrame, { Size = UDim2.new(0, w, 0, h) }, 0.20)
             task.delay(0.12, function()
-                if not State.isMinimized then
+                if not StateStore.isMinimized then
                     Sidebar.Visible = true
                     ContentArea.Visible = true
                 end
@@ -1671,416 +2651,273 @@ function UI.mount()
             MinimizeBtn.Text = "—"
         end
     end
+
     MinimizeBtn.MouseButton1Click:Connect(toggleMinimize)
 
-    local function switchTab(id)
-        currentTab = id
+    local function switchTab(targetId)
+        currentActiveTab = targetId
         for _, tab in ipairs(Tabs) do
-            local isCur = (tab.id == id)
+            local isCurrent = (tab.id == targetId)
             local btn = tabButtons[tab.id]
             local panel = tabPanels[tab.id]
             if btn then
-                local bar = btn:FindFirstChild("ActiveBar")
-                local ico = btn:FindFirstChild("Icon")
-                local lbl = btn:FindFirstChild("Label")
-                local st  = btn:FindFirstChildWhichIsA("UIStroke")
-                if isCur then
-                    Util.tween(btn, { BackgroundColor3 = C.NestedCard }, 0.15)
-                    if bar then Util.tween(bar, { BackgroundTransparency = 0 }, 0.15) end
-                    if ico then Util.tween(ico, { TextColor3 = C.TextPrimary }, 0.15) end
-                    if lbl then Util.tween(lbl, { TextColor3 = C.TextPrimary }, 0.15) end
-                    if st  then Util.tween(st,  { Color = C.AccentGreen, Transparency = 0.15 }, 0.15) end
+                local indicator = btn:FindFirstChild("ActiveBar")
+                local icon = btn:FindFirstChild("Icon")
+                local label = btn:FindFirstChild("Label")
+                local bStroke = btn:FindFirstChildWhichIsA("UIStroke")
+                if isCurrent then
+                    Utils.tween(btn, { BackgroundColor3 = AppConfig.NestedCardBg }, 0.15)
+                    if indicator then Utils.tween(indicator, { BackgroundTransparency = 0 }, 0.15) end
+                    if icon then Utils.tween(icon, { TextColor3 = AppConfig.TextPrimary }, 0.15) end
+                    if label then Utils.tween(label, { TextColor3 = AppConfig.TextPrimary }, 0.15) end
+                    if bStroke then Utils.tween(bStroke, { Color = AppConfig.AccentGreen, Transparency = 0.15 }, 0.15) end
                 else
-                    Util.tween(btn, { BackgroundColor3 = Color3.fromRGB(25,25,25) }, 0.15)
-                    if bar then Util.tween(bar, { BackgroundTransparency = 1 }, 0.15) end
-                    if ico then Util.tween(ico, { TextColor3 = C.TextMuted }, 0.15) end
-                    if lbl then Util.tween(lbl, { TextColor3 = C.TextSecondary }, 0.15) end
-                    if st  then Util.tween(st,  { Color = C.BorderInner, Transparency = 0.7 }, 0.15) end
+                    Utils.tween(btn, { BackgroundColor3 = Color3.fromRGB(25, 25, 25) }, 0.15)
+                    if indicator then Utils.tween(indicator, { BackgroundTransparency = 1 }, 0.15) end
+                    if icon then Utils.tween(icon, { TextColor3 = AppConfig.TextMuted }, 0.15) end
+                    if label then Utils.tween(label, { TextColor3 = AppConfig.TextSecondary }, 0.15) end
+                    if bStroke then Utils.tween(bStroke, { Color = AppConfig.BorderInner, Transparency = 0.7 }, 0.15) end
                 end
             end
-            if panel then panel.Visible = isCur end
+            if panel then panel.Visible = isCurrent end
         end
     end
 
     for idx, tab in ipairs(Tabs) do
-        local btn = Instance.new("TextButton")
-        btn.Name = "Tab_"..tab.id
-        btn.Size = UDim2.new(1, 0, 0, Config.UI.SidebarItemHeight)
-        btn.BackgroundColor3 = (tab.id == "Eggs") and C.NestedCard or Color3.fromRGB(25,25,25)
-        btn.Text = ""
-        btn.AutoButtonColor = false
-        btn.LayoutOrder = idx
-        btn.Parent = Sidebar
+        local tabBtn = Instance.new("TextButton")
+        tabBtn.Name = "Tab_" .. tab.id
+        tabBtn.Size = UDim2.new(1, 0, 0, AppConfig.SidebarItemHeight)
+        tabBtn.BackgroundColor3 = (tab.id == "Eggs") and AppConfig.NestedCardBg or Color3.fromRGB(25, 25, 25)
+        tabBtn.Text = ""
+        tabBtn.AutoButtonColor = false
+        tabBtn.LayoutOrder = idx
+        tabBtn.Parent = Sidebar
 
-        local c = Instance.new("UICorner")
-        c.CornerRadius = UDim.new(0, R.RLG)
-        c.Parent = btn
-        local s = Instance.new("UIStroke")
-        s.Color = (tab.id == "Eggs") and C.AccentGreen or C.BorderInner
-        s.Transparency = (tab.id == "Eggs") and 0.15 or 0.7
-        s.Thickness = 1
-        s.Parent = btn
+        local tc = Instance.new("UICorner")
+        tc.CornerRadius = UDim.new(0, AppConfig.RadiusLG)
+        tc.Parent = tabBtn
 
-        local bar = Instance.new("Frame")
-        bar.Name = "ActiveBar"
-        bar.Size = UDim2.new(0, 3, 0, 20)
-        bar.Position = UDim2.new(0, 0, 0.5, -10)
-        bar.BackgroundColor3 = C.AccentGreen
-        bar.BackgroundTransparency = (tab.id == "Eggs") and 0 or 1
-        bar.BorderSizePixel = 0
-        bar.Parent = btn
-        local bc = Instance.new("UICorner")
-        bc.CornerRadius = UDim.new(1, 0)
-        bc.Parent = bar
+        local ts = Instance.new("UIStroke")
+        ts.Color = (tab.id == "Eggs") and AppConfig.AccentGreen or AppConfig.BorderInner
+        ts.Transparency = (tab.id == "Eggs") and 0.15 or 0.7
+        ts.Thickness = 1
+        ts.Parent = tabBtn
 
-        local ico = Instance.new("TextLabel")
-        ico.Name = "Icon"
-        ico.Size = UDim2.new(0, 24, 1, 0)
-        ico.Position = UDim2.new(0, 12, 0, 0)
-        ico.BackgroundTransparency = 1
-        ico.Text = tab.icon
-        ico.TextColor3 = (tab.id == "Eggs") and C.TextPrimary or C.TextMuted
-        ico.TextSize = 14
-        ico.Font = Enum.Font.GothamBold
-        ico.Parent = btn
+        local activeBar = Instance.new("Frame")
+        activeBar.Name = "ActiveBar"
+        activeBar.Size = UDim2.new(0, 3, 0, 20)
+        activeBar.Position = UDim2.new(0, 0, 0.5, -10)
+        activeBar.BackgroundColor3 = AppConfig.AccentGreen
+        activeBar.BackgroundTransparency = (tab.id == "Eggs") and 0 or 1
+        activeBar.BorderSizePixel = 0
+        activeBar.Parent = tabBtn
 
-        local lbl = Instance.new("TextLabel")
-        lbl.Name = "Label"
-        lbl.Size = UDim2.new(1, -44, 1, 0)
-        lbl.Position = UDim2.new(0, 40, 0, 0)
-        lbl.BackgroundTransparency = 1
-        lbl.Text = tab.label
-        lbl.TextColor3 = (tab.id == "Eggs") and C.TextPrimary or C.TextSecondary
-        lbl.TextSize = T.Body
-        lbl.Font = Enum.Font.GothamBold
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.Parent = btn
+        local abCorner = Instance.new("UICorner")
+        abCorner.CornerRadius = UDim.new(1, 0)
+        abCorner.Parent = activeBar
 
-        btn.MouseEnter:Connect(function()
-            if currentTab ~= tab.id then
-                Util.tween(btn, { BackgroundColor3 = Color3.fromRGB(34,34,34) }, 0.12)
-                Util.tween(ico, { TextColor3 = C.TextSecondary }, 0.12)
+        local iconLbl = Instance.new("TextLabel")
+        iconLbl.Name = "Icon"
+        iconLbl.Size = UDim2.new(0, 24, 1, 0)
+        iconLbl.Position = UDim2.new(0, 12, 0, 0)
+        iconLbl.BackgroundTransparency = 1
+        iconLbl.Text = tab.icon
+        iconLbl.TextColor3 = (tab.id == "Eggs") and AppConfig.TextPrimary or AppConfig.TextMuted
+        iconLbl.TextSize = 14
+        iconLbl.Font = Enum.Font.GothamBold
+        iconLbl.Parent = tabBtn
+
+        local labelLbl = Instance.new("TextLabel")
+        labelLbl.Name = "Label"
+        labelLbl.Size = UDim2.new(1, -44, 1, 0)
+        labelLbl.Position = UDim2.new(0, 40, 0, 0)
+        labelLbl.BackgroundTransparency = 1
+        labelLbl.Text = tab.label
+        labelLbl.TextColor3 = (tab.id == "Eggs") and AppConfig.TextPrimary or AppConfig.TextSecondary
+        labelLbl.TextSize = AppConfig.TextBody
+        labelLbl.Font = Enum.Font.GothamBold
+        labelLbl.TextXAlignment = Enum.TextXAlignment.Left
+        labelLbl.Parent = tabBtn
+
+        tabBtn.MouseEnter:Connect(function()
+            if currentActiveTab ~= tab.id then
+                Utils.tween(tabBtn, { BackgroundColor3 = Color3.fromRGB(34, 34, 34) }, 0.12)
+                Utils.tween(iconLbl, { TextColor3 = AppConfig.TextSecondary }, 0.12)
             end
         end)
-        btn.MouseLeave:Connect(function()
-            if currentTab ~= tab.id then
-                Util.tween(btn, { BackgroundColor3 = Color3.fromRGB(25,25,25) }, 0.12)
-                Util.tween(ico, { TextColor3 = C.TextMuted }, 0.12)
+        tabBtn.MouseLeave:Connect(function()
+            if currentActiveTab ~= tab.id then
+                Utils.tween(tabBtn, { BackgroundColor3 = Color3.fromRGB(25, 25, 25) }, 0.12)
+                Utils.tween(iconLbl, { TextColor3 = AppConfig.TextMuted }, 0.12)
             end
         end)
-        btn.MouseButton1Click:Connect(function() switchTab(tab.id) end)
+        tabBtn.MouseButton1Click:Connect(function() switchTab(tab.id) end)
 
-        tabButtons[tab.id] = btn
+        tabButtons[tab.id] = tabBtn
 
-        local panel = Instance.new("Frame")
-        panel.Name = "Panel_"..tab.id
-        panel.Size = UDim2.new(1, 0, 1, 0)
-        panel.BackgroundColor3 = C.OuterCard
-        panel.Visible = (tab.id == "Eggs")
-        panel.Parent = ContentArea
-        UI.applyCard(panel, R.R2XL, C.OuterCard, C.CardBorder)
-        local pp = Instance.new("UIPadding")
-        pp.PaddingTop = UDim.new(0, 10)
-        pp.PaddingBottom = UDim.new(0, 10)
-        pp.PaddingLeft = UDim.new(0, 10)
-        pp.PaddingRight = UDim.new(0, 10)
-        pp.Parent = panel
-        tabPanels[tab.id] = panel
+        local panelFrame = Instance.new("Frame")
+        panelFrame.Name = "Panel_" .. tab.id
+        panelFrame.Size = UDim2.new(1, 0, 1, 0)
+        panelFrame.BackgroundColor3 = AppConfig.OuterCardBg
+        panelFrame.Visible = (tab.id == "Eggs")
+        panelFrame.Parent = ContentArea
+        UIComponent.applyCard(panelFrame, AppConfig.Radius2XL, AppConfig.OuterCardBg, AppConfig.CardBorder)
+
+        local panelPadding = Instance.new("UIPadding")
+        panelPadding.PaddingTop = UDim.new(0, 10)
+        panelPadding.PaddingBottom = UDim.new(0, 10)
+        panelPadding.PaddingLeft = UDim.new(0, 10)
+        panelPadding.PaddingRight = UDim.new(0, 10)
+        panelPadding.Parent = panelFrame
+
+        tabPanels[tab.id] = panelFrame
     end
 
-    --====================================
-    -- [Eggs tab]
-    --====================================
+    local populateList
+    local updateLiveEggsSummary
+    local updateBackpackUI
+    local updateHistoryUI
+
+    -- [TAB 1] EGGS
     local EggsPanel = tabPanels["Eggs"]
 
-    local function createEggRow(egg, container, updateStatus, populate)
-        local itemH = 38
-        local row = Instance.new("Frame")
-        row.Size = UDim2.new(1, -4, 0, itemH)
-        row.BackgroundColor3 = C.Recessed
-        row.BorderSizePixel = 0
-        row.Parent = container
-        UI.applyCard(row, R.RLG, C.Recessed, C.BorderInner)
-
-        local icon = Instance.new("ImageLabel")
-        icon.Size = UDim2.new(0, itemH - 10, 0, itemH - 10)
-        icon.Position = UDim2.new(0, 8, 0.5, -(itemH-10)/2)
-        icon.BackgroundTransparency = 1
-        icon.Image = Util.getEggImage(egg.Name)
-        icon.ScaleType = Enum.ScaleType.Fit
-        icon.Parent = row
-
-        local nameL = Instance.new("TextLabel")
-        nameL.Size = UDim2.new(1, -240, 1, 0)
-        nameL.Position = UDim2.new(0, itemH + 8, 0, 0)
-        nameL.BackgroundTransparency = 1
-        nameL.Text = egg.Name
-        nameL.TextColor3 = Util.isRare(egg.Name) and C.AccentGold or C.TextPrimary
-        nameL.TextSize = T.Body
-        nameL.Font = Enum.Font.GothamBold
-        nameL.TextXAlignment = Enum.TextXAlignment.Left
-        nameL.TextTruncate = Enum.TextTruncate.AtEnd
-        nameL.Parent = row
-
-        local distBadge = Instance.new("Frame")
-        distBadge.Size = UDim2.new(0, 50, 0, 20)
-        distBadge.Position = UDim2.new(1, -220, 0.5, -10)
-        distBadge.BackgroundColor3 = C.NestedCard
-        distBadge.Parent = row
-        UI.applyCard(distBadge, R.RSM, C.NestedCard, C.BorderInner)
-
-        local distL = Instance.new("TextLabel")
-        distL.Size = UDim2.new(1, 0, 1, 0)
-        distL.BackgroundTransparency = 1
-        distL.TextColor3 = C.TextMuted
-        distL.TextSize = T.Caption
-        distL.Font = Enum.Font.Gotham
-        local d = Util.getDistance(egg)
-        distL.Text = (d ~= math.huge) and string.format("%dst", math.floor(d+0.5)) or "--"
-        distL.Parent = distBadge
-
-        local TPBtn = Instance.new("TextButton")
-        TPBtn.Size = UDim2.new(0, 38, 0, 24)
-        TPBtn.Position = UDim2.new(1, -164, 0.5, -12)
-        TPBtn.BackgroundColor3 = C.NestedCard
-        TPBtn.Text = "TP"
-        TPBtn.TextColor3 = C.TextPrimary
-        TPBtn.TextSize = T.Caption
-        TPBtn.Font = Enum.Font.GothamBold
-        TPBtn.Parent = row
-        UI.styleButton(TPBtn, R.RSM, C.NestedCard)
-        TPBtn.MouseButton1Click:Connect(function()
-            if not egg or not egg.Parent then
-                updateStatus("Egg despawned!", C.AccentRed); return
-            end
-            if Movement.teleportTo(egg) then
-                updateStatus("Teleported to "..egg.Name, C.AccentGreen)
-            end
-        end)
-
-        local FarmBtn = Instance.new("TextButton")
-        FarmBtn.Size = UDim2.new(0, 56, 0, 24)
-        FarmBtn.Position = UDim2.new(1, -122, 0.5, -12)
-        local isFarming = State.autoFarmEggs[egg.Name]
-        local farmBg = isFarming and C.AccentGreen or C.NestedCard
-        FarmBtn.BackgroundColor3 = farmBg
-        FarmBtn.Text = isFarming and "Farm ON" or "Farm"
-        FarmBtn.TextColor3 = isFarming and Color3.fromRGB(10,20,15) or C.TextSecondary
-        FarmBtn.TextSize = T.Caption
-        FarmBtn.Font = Enum.Font.GothamBold
-        FarmBtn.Parent = row
-        UI.styleButton(FarmBtn, R.RSM, farmBg)
-        FarmBtn.MouseButton1Click:Connect(function()
-            if not egg or not egg.Parent then return end
-            local name = egg.Name
-            if State.autoFarmEggs[name] then
-                State.autoFarmEggs[name] = nil
-                UI.setButtonDefault(FarmBtn, C.NestedCard)
-                FarmBtn.Text = "Farm"
-                FarmBtn.TextColor3 = C.TextSecondary
-                updateStatus("Removed: "..name, C.TextSecondary)
-                local any = false
-                for _ in pairs(State.autoFarmEggs) do any = true; break end
-                if not any then Farm.stopAutoFarm() end
-            else
-                State.autoFarmEggs[name] = true
-                UI.setButtonDefault(FarmBtn, C.AccentGreen)
-                FarmBtn.Text = "Farm ON"
-                FarmBtn.TextColor3 = Color3.fromRGB(10,20,15)
-                updateStatus("Target: "..name, C.AccentGreen)
-                if not State.autoFarmActive then Farm.startAutoFarm() end
-            end
-            for pe in pairs(State.autoFarmProcessed) do
-                if pe and pe.Name == name then State.autoFarmProcessed[pe] = nil end
-            end
-        end)
-
-        local ESPBtn = Instance.new("TextButton")
-        ESPBtn.Size = UDim2.new(0, 46, 0, 24)
-        ESPBtn.Position = UDim2.new(1, -62, 0.5, -12)
-        ESPBtn.BackgroundColor3 = C.NestedCard
-        ESPBtn.TextColor3 = C.TextSecondary
-        ESPBtn.TextSize = T.Caption
-        ESPBtn.Font = Enum.Font.GothamBold
-        ESPBtn.Parent = row
-        UI.styleButton(ESPBtn, R.RSM, C.NestedCard)
-
-        local eggColor = Util.colorFor(egg.Name)
-        local ed = State.eggData[egg]
-        if ed and ed.CustomActive then
-            UI.setButtonDefault(ESPBtn, eggColor)
-            ESPBtn.Text = "ON"
-            ESPBtn.TextColor3 = Color3.fromRGB(10,10,10)
-        else
-            ESPBtn.Text = "ESP"
-        end
-
-        ESPBtn.MouseButton1Click:Connect(function()
-            if not State.eggData[egg] then
-                State.eggData[egg] = {
-                    Highlight = nil, NameBillboard = nil,
-                    CustomColor = eggColor, CustomActive = false
-                }
-            end
-            local info = State.eggData[egg]
-            info.CustomActive = not info.CustomActive
-            info.CustomColor = eggColor
-            if info.CustomActive then
-                UI.setButtonDefault(ESPBtn, eggColor)
-                ESPBtn.Text = "ON"
-                ESPBtn.TextColor3 = Color3.fromRGB(10,10,10)
-                updateStatus("Target ESP: "..egg.Name, eggColor)
-            else
-                UI.setButtonDefault(ESPBtn, C.NestedCard)
-                ESPBtn.Text = "ESP"
-                ESPBtn.TextColor3 = C.TextSecondary
-                updateStatus("Target ESP: OFF", C.TextSecondary)
-            end
-            ESP.updateEgg(egg)
-        end)
-
-        return row
-    end
-
-    -- Live chips card --
-    local LiveCard = Instance.new("Frame")
-    LiveCard.Size = UDim2.new(1, 0, 0, 56)
-    LiveCard.BackgroundColor3 = C.NestedCard
-    LiveCard.Parent = EggsPanel
-    UI.applyCard(LiveCard, R.RXL, C.NestedCard, C.BorderInner)
+    local LiveChipsCard = Instance.new("Frame")
+    LiveChipsCard.Size = UDim2.new(1, 0, 0, 56)
+    LiveChipsCard.BackgroundColor3 = AppConfig.NestedCardBg
+    LiveChipsCard.Parent = EggsPanel
+    UIComponent.applyCard(LiveChipsCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
     local LiveTitle = Instance.new("TextLabel")
     LiveTitle.Size = UDim2.new(0.5, 0, 0, 18)
     LiveTitle.Position = UDim2.new(0, 12, 0, 8)
     LiveTitle.BackgroundTransparency = 1
     LiveTitle.Text = "🥚  Live Eggs Realtime"
-    LiveTitle.TextColor3 = C.AccentGold
-    LiveTitle.TextSize = T.Header
+    LiveTitle.TextColor3 = AppConfig.AccentGold
+    LiveTitle.TextSize = AppConfig.TextHeader
     LiveTitle.Font = Enum.Font.GothamBold
     LiveTitle.TextXAlignment = Enum.TextXAlignment.Left
-    LiveTitle.Parent = LiveCard
+    LiveTitle.Parent = LiveChipsCard
 
-    local LiveCount = Instance.new("TextLabel")
-    LiveCount.Size = UDim2.new(0.5, -12, 0, 18)
-    LiveCount.Position = UDim2.new(0.5, 0, 0, 8)
-    LiveCount.BackgroundTransparency = 1
-    LiveCount.Text = "Total Live: 0"
-    LiveCount.TextColor3 = C.TextMuted
-    LiveCount.TextSize = T.Caption
-    LiveCount.Font = Enum.Font.GothamMedium
-    LiveCount.TextXAlignment = Enum.TextXAlignment.Right
-    LiveCount.Parent = LiveCard
+    local LiveSummaryCountLabel = Instance.new("TextLabel")
+    LiveSummaryCountLabel.Size = UDim2.new(0.5, -12, 0, 18)
+    LiveSummaryCountLabel.Position = UDim2.new(0.5, 0, 0, 8)
+    LiveSummaryCountLabel.BackgroundTransparency = 1
+    LiveSummaryCountLabel.Text = "Total Live: 0"
+    LiveSummaryCountLabel.TextColor3 = AppConfig.TextMuted
+    LiveSummaryCountLabel.TextSize = AppConfig.TextCaption
+    LiveSummaryCountLabel.Font = Enum.Font.GothamMedium
+    LiveSummaryCountLabel.TextXAlignment = Enum.TextXAlignment.Right
+    LiveSummaryCountLabel.Parent = LiveChipsCard
 
-    local LiveScroll = Instance.new("ScrollingFrame")
-    LiveScroll.Size = UDim2.new(1, -20, 0, 26)
-    LiveScroll.Position = UDim2.new(0, 10, 0, 28)
-    LiveScroll.BackgroundTransparency = 1
-    LiveScroll.BorderSizePixel = 0
-    LiveScroll.ScrollBarThickness = 2
-    LiveScroll.ScrollBarImageColor3 = Color3.fromRGB(60,60,60)
-    LiveScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    LiveScroll.Parent = LiveCard
+    local LiveSummaryContainer = Instance.new("ScrollingFrame")
+    LiveSummaryContainer.Size = UDim2.new(1, -20, 0, 26)
+    LiveSummaryContainer.Position = UDim2.new(0, 10, 0, 28)
+    LiveSummaryContainer.BackgroundTransparency = 1
+    LiveSummaryContainer.BorderSizePixel = 0
+    LiveSummaryContainer.ScrollBarThickness = 2
+    LiveSummaryContainer.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
+    LiveSummaryContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+    LiveSummaryContainer.Parent = LiveChipsCard
 
-    local LiveLayout = Instance.new("UIListLayout")
-    LiveLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    LiveLayout.FillDirection = Enum.FillDirection.Horizontal
-    LiveLayout.Padding = UDim.new(0, 4)
-    LiveLayout.Parent = LiveScroll
+    local LiveSummaryLayout = Instance.new("UIListLayout")
+    LiveSummaryLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    LiveSummaryLayout.FillDirection = Enum.FillDirection.Horizontal
+    LiveSummaryLayout.Padding = UDim.new(0, 4)
+    LiveSummaryLayout.Parent = LiveSummaryContainer
 
-    LiveLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        LiveScroll.CanvasSize = UDim2.new(0, LiveLayout.AbsoluteContentSize.X + 6, 0, 0)
+    LiveSummaryLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        LiveSummaryContainer.CanvasSize = UDim2.new(0, LiveSummaryLayout.AbsoluteContentSize.X + 6, 0, 0)
     end)
 
-    -- Toolbar --
-    local Toolbar = Instance.new("Frame")
-    Toolbar.Size = UDim2.new(1, 0, 0, 42)
-    Toolbar.Position = UDim2.new(0, 0, 0, 64)
-    Toolbar.BackgroundColor3 = C.NestedCard
-    Toolbar.Parent = EggsPanel
-    UI.applyCard(Toolbar, R.RXL, C.NestedCard, C.BorderInner)
+    local ToolbarCard = Instance.new("Frame")
+    ToolbarCard.Size = UDim2.new(1, 0, 0, 42)
+    ToolbarCard.Position = UDim2.new(0, 0, 0, 64)
+    ToolbarCard.BackgroundColor3 = AppConfig.NestedCardBg
+    ToolbarCard.Parent = EggsPanel
+    UIComponent.applyCard(ToolbarCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
-    local SearchBoxC = Instance.new("Frame")
-    SearchBoxC.Size = UDim2.new(0.36, 0, 0, 28)
-    SearchBoxC.Position = UDim2.new(0, 8, 0.5, -14)
-    SearchBoxC.BackgroundColor3 = C.Recessed
-    SearchBoxC.Parent = Toolbar
-    UI.applyCard(SearchBoxC, R.RMD, C.Recessed, C.BorderInner)
+    local SearchBoxContainer = Instance.new("Frame")
+    SearchBoxContainer.Size = UDim2.new(0.36, 0, 0, 28)
+    SearchBoxContainer.Position = UDim2.new(0, 8, 0.5, -14)
+    SearchBoxContainer.BackgroundColor3 = AppConfig.RecessedBg
+    SearchBoxContainer.Parent = ToolbarCard
+    UIComponent.applyCard(SearchBoxContainer, AppConfig.RadiusMD, AppConfig.RecessedBg, AppConfig.BorderInner)
 
     local SearchBox = Instance.new("TextBox")
     SearchBox.Size = UDim2.new(1, -28, 1, 0)
     SearchBox.Position = UDim2.new(0, 10, 0, 0)
     SearchBox.BackgroundTransparency = 1
     SearchBox.PlaceholderText = "🔍 Search egg..."
-    SearchBox.PlaceholderColor3 = C.TextMuted
+    SearchBox.PlaceholderColor3 = AppConfig.TextMuted
     SearchBox.Text = ""
-    SearchBox.TextColor3 = C.TextPrimary
-    SearchBox.TextSize = T.Caption
+    SearchBox.TextColor3 = AppConfig.TextPrimary
+    SearchBox.TextSize = AppConfig.TextCaption
     SearchBox.Font = Enum.Font.GothamMedium
     SearchBox.TextXAlignment = Enum.TextXAlignment.Left
     SearchBox.ClearTextOnFocus = false
-    SearchBox.Parent = SearchBoxC
+    SearchBox.Parent = SearchBoxContainer
 
-    local ClearSearch = Instance.new("TextButton")
-    ClearSearch.Size = UDim2.new(0, 22, 0, 22)
-    ClearSearch.Position = UDim2.new(1, -24, 0.5, -11)
-    ClearSearch.BackgroundTransparency = 1
-    ClearSearch.Text = "✕"
-    ClearSearch.TextColor3 = C.TextMuted
-    ClearSearch.TextSize = 10
-    ClearSearch.Font = Enum.Font.GothamBold
-    ClearSearch.Visible = false
-    ClearSearch.Parent = SearchBoxC
+    local ClearSearchBtn = Instance.new("TextButton")
+    ClearSearchBtn.Size = UDim2.new(0, 22, 0, 22)
+    ClearSearchBtn.Position = UDim2.new(1, -24, 0.5, -11)
+    ClearSearchBtn.BackgroundTransparency = 1
+    ClearSearchBtn.Text = "✕"
+    ClearSearchBtn.TextColor3 = AppConfig.TextMuted
+    ClearSearchBtn.TextSize = 10
+    ClearSearchBtn.Font = Enum.Font.GothamBold
+    ClearSearchBtn.Visible = false
+    ClearSearchBtn.Parent = SearchBoxContainer
 
     local FarmAllBtn = Instance.new("TextButton")
     FarmAllBtn.Size = UDim2.new(0.19, -4, 0, 28)
     FarmAllBtn.Position = UDim2.new(0.37, 2, 0.5, -14)
-    FarmAllBtn.BackgroundColor3 = C.Recessed
+    FarmAllBtn.BackgroundColor3 = AppConfig.RecessedBg
     FarmAllBtn.Text = "⚡ Farm All"
-    FarmAllBtn.TextColor3 = C.AccentGreen
-    FarmAllBtn.TextSize = T.Caption
+    FarmAllBtn.TextColor3 = AppConfig.AccentGreen
+    FarmAllBtn.TextSize = AppConfig.TextCaption
     FarmAllBtn.Font = Enum.Font.GothamBold
-    FarmAllBtn.Parent = Toolbar
-    UI.styleButton(FarmAllBtn, R.RMD, C.Recessed)
+    FarmAllBtn.Parent = ToolbarCard
+    UIComponent.styleButton(FarmAllBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
 
     local ClearFarmBtn = Instance.new("TextButton")
     ClearFarmBtn.Size = UDim2.new(0.16, -4, 0, 28)
     ClearFarmBtn.Position = UDim2.new(0.56, 2, 0.5, -14)
-    ClearFarmBtn.BackgroundColor3 = C.Recessed
+    ClearFarmBtn.BackgroundColor3 = AppConfig.RecessedBg
     ClearFarmBtn.Text = "✕ Clear"
-    ClearFarmBtn.TextColor3 = C.AccentRed
-    ClearFarmBtn.TextSize = T.Caption
+    ClearFarmBtn.TextColor3 = AppConfig.AccentRed
+    ClearFarmBtn.TextSize = AppConfig.TextCaption
     ClearFarmBtn.Font = Enum.Font.GothamBold
-    ClearFarmBtn.Parent = Toolbar
-    UI.styleButton(ClearFarmBtn, R.RMD, C.Recessed)
+    ClearFarmBtn.Parent = ToolbarCard
+    UIComponent.styleButton(ClearFarmBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
 
     local SortBtn = Instance.new("TextButton")
     SortBtn.Size = UDim2.new(0.16, -4, 0, 28)
     SortBtn.Position = UDim2.new(0.72, 2, 0.5, -14)
-    SortBtn.BackgroundColor3 = C.Recessed
+    SortBtn.BackgroundColor3 = AppConfig.RecessedBg
     SortBtn.Text = "Sort: Name"
-    SortBtn.TextColor3 = C.TextPrimary
-    SortBtn.TextSize = T.Caption
+    SortBtn.TextColor3 = AppConfig.TextPrimary
+    SortBtn.TextSize = AppConfig.TextCaption
     SortBtn.Font = Enum.Font.GothamBold
-    SortBtn.Parent = Toolbar
-    UI.styleButton(SortBtn, R.RMD, C.Recessed)
+    SortBtn.Parent = ToolbarCard
+    UIComponent.styleButton(SortBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
 
-    local EggCountLbl = Instance.new("TextLabel")
-    EggCountLbl.Size = UDim2.new(0.11, -4, 0, 28)
-    EggCountLbl.Position = UDim2.new(0.88, 0, 0.5, -14)
-    EggCountLbl.BackgroundTransparency = 1
-    EggCountLbl.Text = "0/0"
-    EggCountLbl.TextColor3 = C.TextMuted
-    EggCountLbl.TextSize = T.Caption
-    EggCountLbl.Font = Enum.Font.GothamMedium
-    EggCountLbl.TextXAlignment = Enum.TextXAlignment.Center
-    EggCountLbl.Parent = Toolbar
+    local EggCountLabel = Instance.new("TextLabel")
+    EggCountLabel.Size = UDim2.new(0.11, -4, 0, 28)
+    EggCountLabel.Position = UDim2.new(0.88, 0, 0.5, -14)
+    EggCountLabel.BackgroundTransparency = 1
+    EggCountLabel.Text = "0/0"
+    EggCountLabel.TextColor3 = AppConfig.TextMuted
+    EggCountLabel.TextSize = AppConfig.TextCaption
+    EggCountLabel.Font = Enum.Font.GothamMedium
+    EggCountLabel.TextXAlignment = Enum.TextXAlignment.Center
+    EggCountLabel.Parent = ToolbarCard
 
     local ListCard = Instance.new("Frame")
     ListCard.Size = UDim2.new(1, 0, 1, -114)
     ListCard.Position = UDim2.new(0, 0, 0, 114)
-    ListCard.BackgroundColor3 = C.NestedCard
+    ListCard.BackgroundColor3 = AppConfig.NestedCardBg
     ListCard.Parent = EggsPanel
-    UI.applyCard(ListCard, R.RXL, C.NestedCard, C.BorderInner)
+    UIComponent.applyCard(ListCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
     local ScrollList = Instance.new("ScrollingFrame")
     ScrollList.Size = UDim2.new(1, -16, 1, -16)
@@ -2088,1090 +2925,1631 @@ function UI.mount()
     ScrollList.BackgroundTransparency = 1
     ScrollList.BorderSizePixel = 0
     ScrollList.ScrollBarThickness = 3
-    ScrollList.ScrollBarImageColor3 = Color3.fromRGB(60,60,60)
+    ScrollList.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
     ScrollList.CanvasSize = UDim2.new(0, 0, 0, 0)
     ScrollList.Parent = ListCard
 
-    local ScrollLayout = Instance.new("UIListLayout")
-    ScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    ScrollLayout.Padding = UDim.new(0, 4)
-    ScrollLayout.Parent = ScrollList
+    local UIListLayout = Instance.new("UIListLayout")
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout.Padding = UDim.new(0, 4)
+    UIListLayout.Parent = ScrollList
 
-    ScrollLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        ScrollList.CanvasSize = UDim2.new(0, 0, 0, ScrollLayout.AbsoluteContentSize.Y + 6)
+    UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        ScrollList.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 6)
     end)
 
-    local renderedRows = {}
-    local function populateList()
+    local renderedEggRows = {}
+
+    local function createEggItem(egg)
+        local itemHeight = 38
+        local ItemFrame = Instance.new("Frame")
+        ItemFrame.Size = UDim2.new(1, -4, 0, itemHeight)
+        ItemFrame.BackgroundColor3 = AppConfig.RecessedBg
+        ItemFrame.BorderSizePixel = 0
+        ItemFrame.Parent = ScrollList
+        UIComponent.applyCard(ItemFrame, AppConfig.RadiusLG, AppConfig.RecessedBg, AppConfig.BorderInner)
+
+        ItemFrame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton2 and AppConfig.ESPClickToLock then
+                ESPComponent.togglePin(egg)
+                local nowPinned = StateStore.pinnedEggs[egg]
+                updateStatus(nowPinned and ("Pinned: " .. egg.Name) or ("Unpinned: " .. egg.Name),
+                             nowPinned and AppConfig.AccentGold or AppConfig.TextSecondary)
+            end
+        end)
+
+        local eggIcon = Instance.new("ImageLabel")
+        eggIcon.Size = UDim2.new(0, itemHeight - 10, 0, itemHeight - 10)
+        eggIcon.Position = UDim2.new(0, 8, 0.5, -(itemHeight - 10) / 2)
+        eggIcon.BackgroundTransparency = 1
+        eggIcon.Image = Utils.getEggImage(egg.Name)
+        eggIcon.ScaleType = Enum.ScaleType.Fit
+        eggIcon.Parent = ItemFrame
+
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(1, -300, 1, 0)
+        nameLabel.Position = UDim2.new(0, itemHeight + 8, 0, 0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.Text = egg.Name
+        nameLabel.TextColor3 = Utils.isRareEgg(egg.Name) and AppConfig.AccentGold or AppConfig.TextPrimary
+        nameLabel.TextSize = AppConfig.TextBody
+        nameLabel.Font = Enum.Font.GothamBold
+        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+        nameLabel.Parent = ItemFrame
+
+        local weightBadge = Instance.new("Frame")
+        weightBadge.Size = UDim2.new(0, 60, 0, 20)
+        weightBadge.Position = UDim2.new(1, -284, 0.5, -10)
+        weightBadge.BackgroundColor3 = Color3.fromRGB(36, 30, 20)
+        weightBadge.Parent = ItemFrame
+        UIComponent.applyCard(weightBadge, AppConfig.RadiusSM, Color3.fromRGB(36, 30, 20), AppConfig.AccentGold, 0.6)
+
+        local weightLabel = Instance.new("TextLabel")
+        weightLabel.Size = UDim2.new(1, 0, 1, 0)
+        weightLabel.BackgroundTransparency = 1
+        weightLabel.TextColor3 = AppConfig.AccentGold
+        weightLabel.TextSize = AppConfig.TextCaption
+        weightLabel.Font = Enum.Font.GothamBold
+        weightLabel.Text = "⚖️ " .. Utils.formatWeight(Utils.getEggWeight(egg))
+        weightLabel.Parent = weightBadge
+
+        local distBadge = Instance.new("Frame")
+        distBadge.Size = UDim2.new(0, 50, 0, 20)
+        distBadge.Position = UDim2.new(1, -220, 0.5, -10)
+        distBadge.BackgroundColor3 = AppConfig.NestedCardBg
+        distBadge.Parent = ItemFrame
+        UIComponent.applyCard(distBadge, AppConfig.RadiusSM, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+        local distLabel = Instance.new("TextLabel")
+        distLabel.Size = UDim2.new(1, 0, 1, 0)
+        distLabel.BackgroundTransparency = 1
+        distLabel.TextColor3 = AppConfig.TextMuted
+        distLabel.TextSize = AppConfig.TextCaption
+        distLabel.Font = Enum.Font.Gotham
+        local dist = Utils.getDistanceToTarget(egg)
+        distLabel.Text = Utils.formatDistance(dist)
+        distLabel.Parent = distBadge
+
+        local TPBtn = Instance.new("TextButton")
+        TPBtn.Size = UDim2.new(0, 38, 0, 24)
+        TPBtn.Position = UDim2.new(1, -164, 0.5, -12)
+        TPBtn.BackgroundColor3 = AppConfig.NestedCardBg
+        TPBtn.Text = "TP"
+        TPBtn.TextColor3 = AppConfig.TextPrimary
+        TPBtn.TextSize = AppConfig.TextCaption
+        TPBtn.Font = Enum.Font.GothamBold
+        TPBtn.Parent = ItemFrame
+        UIComponent.styleButton(TPBtn, AppConfig.RadiusSM, AppConfig.NestedCardBg)
+
+        TPBtn.MouseButton1Click:Connect(function()
+            if not egg or not egg.Parent then updateStatus("Egg despawned!", AppConfig.AccentRed) return end
+            local ok = MovementComponent.teleportTo(egg)
+            if ok then updateStatus("Teleported to " .. egg.Name, AppConfig.AccentGreen) end
+        end)
+
+        local AutoFarmBtn = Instance.new("TextButton")
+        AutoFarmBtn.Size = UDim2.new(0, 56, 0, 24)
+        AutoFarmBtn.Position = UDim2.new(1, -122, 0.5, -12)
+        local isFarming = StateStore.autoFarmEggs[egg.Name]
+        local farmBg = isFarming and AppConfig.AccentGreen or AppConfig.NestedCardBg
+        AutoFarmBtn.BackgroundColor3 = farmBg
+        AutoFarmBtn.Text = isFarming and "Farm ON" or "Farm"
+        AutoFarmBtn.TextColor3 = isFarming and Color3.fromRGB(10, 20, 15) or AppConfig.TextSecondary
+        AutoFarmBtn.TextSize = AppConfig.TextCaption
+        AutoFarmBtn.Font = Enum.Font.GothamBold
+        AutoFarmBtn.Parent = ItemFrame
+        UIComponent.styleButton(AutoFarmBtn, AppConfig.RadiusSM, farmBg)
+
+        AutoFarmBtn.MouseButton1Click:Connect(function()
+            if not egg or not egg.Parent then return end
+            local name = egg.Name
+            if StateStore.autoFarmEggs[name] then
+                StateStore.autoFarmEggs[name] = nil
+                UIComponent.setButtonDefault(AutoFarmBtn, AppConfig.NestedCardBg)
+                AutoFarmBtn.Text = "Farm"
+                AutoFarmBtn.TextColor3 = AppConfig.TextSecondary
+                updateStatus("Removed from Farm: " .. name, AppConfig.TextSecondary)
+                local any = false
+                for _, v in pairs(StateStore.autoFarmEggs) do if v then any = true break end end
+                if not any then FarmComponent.stopAutoFarm() end
+            else
+                StateStore.autoFarmEggs[name] = true
+                UIComponent.setButtonDefault(AutoFarmBtn, AppConfig.AccentGreen)
+                AutoFarmBtn.Text = "Farm ON"
+                AutoFarmBtn.TextColor3 = Color3.fromRGB(10, 20, 15)
+                updateStatus("AutoFarm target: " .. name, AppConfig.AccentGreen)
+                if not StateStore.autoFarmActive then
+                    FarmComponent.startAutoFarm(updateStatus, nil)
+                end
+            end
+            for pe in pairs(StateStore.autoFarmProcessed) do
+                if pe and pe.Name == name then StateStore.autoFarmProcessed[pe] = nil end
+            end
+        end)
+
+        local ESPBtn = Instance.new("TextButton")
+        ESPBtn.Size = UDim2.new(0, 46, 0, 24)
+        ESPBtn.Position = UDim2.new(1, -62, 0.5, -12)
+        ESPBtn.BackgroundColor3 = AppConfig.NestedCardBg
+        ESPBtn.TextColor3 = AppConfig.TextSecondary
+        ESPBtn.TextSize = AppConfig.TextCaption
+        ESPBtn.Font = Enum.Font.GothamBold
+        ESPBtn.Parent = ItemFrame
+        UIComponent.styleButton(ESPBtn, AppConfig.RadiusSM, AppConfig.NestedCardBg)
+
+        local eggColor = ESPComponent.getColor(egg.Name)
+        local ed = StateStore.eggData[egg]
+        if ed and ed.CustomActive then
+            UIComponent.setButtonDefault(ESPBtn, eggColor)
+            ESPBtn.Text = "ON"
+            ESPBtn.TextColor3 = Color3.fromRGB(10, 10, 10)
+        else
+            ESPBtn.Text = "ESP"
+        end
+
+        ESPBtn.MouseButton1Click:Connect(function()
+            if not StateStore.eggData[egg] then
+                StateStore.eggData[egg] = {
+                    Highlight = nil, NameBillboard = nil,
+                    CustomColor = eggColor, CustomActive = false
+                }
+            end
+            local info = StateStore.eggData[egg]
+            info.CustomActive = not info.CustomActive
+            info.CustomColor = eggColor
+            if info.CustomActive then
+                UIComponent.setButtonDefault(ESPBtn, eggColor)
+                ESPBtn.Text = "ON"
+                ESPBtn.TextColor3 = Color3.fromRGB(10, 10, 10)
+                updateStatus("Target ESP: " .. egg.Name, eggColor)
+            else
+                UIComponent.setButtonDefault(ESPBtn, AppConfig.NestedCardBg)
+                ESPBtn.Text = "ESP"
+                ESPBtn.TextColor3 = AppConfig.TextSecondary
+                updateStatus("Target ESP: OFF", AppConfig.TextSecondary)
+            end
+            ESPComponent.updateEgg(egg)
+        end)
+
+        return ItemFrame
+    end
+
+    populateList = function()
         local savedPos = ScrollList.CanvasPosition
-        local folder = Services.RenderedEggsFolder
+        local folder = ServiceManager.RenderedEggsFolder
+
         if not folder then
-            EggCountLbl.Text = "0/0"
-            for egg, row in pairs(renderedRows) do
-                row:Destroy(); renderedRows[egg] = nil
+            EggCountLabel.Text = "0/0"
+            for egg, row in pairs(renderedEggRows) do
+                row:Destroy()
+                renderedEggRows[egg] = nil
             end
             return
         end
+
         local found = {}
         for _, egg in ipairs(folder:GetChildren()) do
-            if Util.isValidEgg(egg) then table.insert(found, egg) end
+            if Utils.isValidEgg(egg) then table.insert(found, egg) end
         end
-        if State.sortMode == "Distance" then
-            table.sort(found, function(a,b) return Util.getDistance(a) < Util.getDistance(b) end)
+
+        if StateStore.sortByWeight then
+            table.sort(found, function(a, b)
+                local wa = Utils.getEggWeight(a) or 0
+                local wb = Utils.getEggWeight(b) or 0
+                return wa > wb
+            end)
+        elseif StateStore.sortMode == "Distance" then
+            table.sort(found, function(a, b) return Utils.getDistanceToTarget(a) < Utils.getDistanceToTarget(b) end)
         else
-            table.sort(found, function(a,b) return a.Name:lower() < b.Name:lower() end)
+            table.sort(found, function(a, b) return a.Name:lower() < b.Name:lower() end)
         end
-        local q = State.currentSearchQuery:lower()
+
+        table.sort(found, function(a, b)
+            local pa = StateStore.pinnedEggs[a] and 1 or 0
+            local pb = StateStore.pinnedEggs[b] and 1 or 0
+            return pa > pb
+        end)
+
+        local query = StateStore.currentSearchQuery:lower()
         local visible = {}
         for _, egg in ipairs(found) do
-            if q == "" or string.find(egg.Name:lower(), q, 1, true) then
+            if query == "" or string.find(egg.Name:lower(), query, 1, true) then
                 table.insert(visible, egg)
             end
         end
+
         local visibleSet = {}
         for _, egg in ipairs(visible) do visibleSet[egg] = true end
-        for egg, row in pairs(renderedRows) do
+
+        for egg, row in pairs(renderedEggRows) do
             if not visibleSet[egg] or not egg.Parent then
-                row:Destroy(); renderedRows[egg] = nil
+                row:Destroy()
+                renderedEggRows[egg] = nil
             end
         end
+
         for i, egg in ipairs(visible) do
-            local row = renderedRows[egg]
+            local row = renderedEggRows[egg]
             if not row or not row.Parent then
-                row = createEggRow(egg, ScrollList,
-                    function(t,c) Bus.emit("status", t, c) end,
-                    populateList)
-                renderedRows[egg] = row
+                row = createEggItem(egg)
+                renderedEggRows[egg] = row
             end
             row.LayoutOrder = i
         end
-        EggCountLbl.Text = string.format("%d/%d", #visible, #found)
-        local empty = ScrollList:FindFirstChild("EmptyLabel")
+
+        EggCountLabel.Text = string.format("%d/%d", #visible, #found)
+
         if #visible == 0 then
-            if not empty then
-                local el = Instance.new("TextLabel")
-                el.Name = "EmptyLabel"
-                el.Size = UDim2.new(1, -10, 0, 40)
-                el.BackgroundTransparency = 1
-                el.Text = "No Eggs Found / ไม่พบไข่"
-                el.TextColor3 = C.TextMuted
-                el.TextSize = T.Body
-                el.Font = Enum.Font.GothamMedium
-                el.Parent = ScrollList
+            if not ScrollList:FindFirstChild("EmptyLabel") then
+                local emptyLabel = Instance.new("TextLabel")
+                emptyLabel.Name = "EmptyLabel"
+                emptyLabel.Size = UDim2.new(1, -10, 0, 40)
+                emptyLabel.BackgroundTransparency = 1
+                emptyLabel.Text = "No Eggs Found / ไม่พบไข่"
+                emptyLabel.TextColor3 = AppConfig.TextMuted
+                emptyLabel.TextSize = AppConfig.TextBody
+                emptyLabel.Font = Enum.Font.GothamMedium
+                emptyLabel.Parent = ScrollList
             end
-        elseif empty then
-            empty:Destroy()
+        else
+            local el = ScrollList:FindFirstChild("EmptyLabel")
+            if el then el:Destroy() end
         end
+
         task.defer(function()
             if ScrollList and ScrollList.Parent then ScrollList.CanvasPosition = savedPos end
         end)
     end
 
-    local chips = {}
-    local function updateLiveChips()
-        local folder = Services.RenderedEggsFolder
+    local renderedChips = {}
+
+    updateLiveEggsSummary = function()
+        local folder = ServiceManager.RenderedEggsFolder
         if not folder then return end
-        local counts, total = {}, 0
+
+        local counts = {}
+        local total = 0
         for _, egg in ipairs(folder:GetChildren()) do
-            if Util.isValidEgg(egg) then
+            if Utils.isValidEgg(egg) then
                 counts[egg.Name] = (counts[egg.Name] or 0) + 1
                 total += 1
             end
         end
-        LiveCount.Text = "Total Live: "..total
-        for name, chip in pairs(chips) do
-            if not counts[name] then chip:Destroy(); chips[name] = nil end
+
+        LiveSummaryCountLabel.Text = "Total Live: " .. tostring(total)
+
+        for name, chip in pairs(renderedChips) do
+            if not counts[name] then
+                chip:Destroy()
+                renderedChips[name] = nil
+            end
         end
+
         for name, count in pairs(counts) do
-            local chip = chips[name]
+            local chip = renderedChips[name]
             if chip and chip.Parent then
                 local badge = chip:FindFirstChild("CountBadge")
-                if badge then badge.Text = "x"..count end
+                if badge then badge.Text = "x" .. tostring(count) end
             else
-                local isRare = Util.isRare(name)
+                local isRare = Utils.isRareEgg(name)
                 chip = Instance.new("TextButton")
                 chip.Size = UDim2.new(0, 138, 0, 24)
-                chip.BackgroundColor3 = isRare and Color3.fromRGB(36,30,20) or C.Recessed
+                chip.BackgroundColor3 = isRare and Color3.fromRGB(36, 30, 20) or AppConfig.RecessedBg
                 chip.Text = ""
-                chip.Parent = LiveScroll
-                UI.applyCard(chip, R.RSM, chip.BackgroundColor3,
-                    isRare and C.AccentGold or C.BorderInner)
-                local ico = Instance.new("ImageLabel")
-                ico.Size = UDim2.new(0, 16, 0, 16)
-                ico.Position = UDim2.new(0, 5, 0.5, -8)
-                ico.BackgroundTransparency = 1
-                ico.Image = Util.getEggImage(name)
-                ico.ScaleType = Enum.ScaleType.Fit
-                ico.Parent = chip
+                chip.Parent = LiveSummaryContainer
+                UIComponent.applyCard(chip, AppConfig.RadiusSM, chip.BackgroundColor3, isRare and AppConfig.AccentGold or AppConfig.BorderInner)
+
+                local icon = Instance.new("ImageLabel")
+                icon.Size = UDim2.new(0, 16, 0, 16)
+                icon.Position = UDim2.new(0, 5, 0.5, -8)
+                icon.BackgroundTransparency = 1
+                icon.Image = Utils.getEggImage(name)
+                icon.ScaleType = Enum.ScaleType.Fit
+                icon.Parent = chip
+
                 local title = Instance.new("TextLabel")
                 title.Size = UDim2.new(1, -50, 1, 0)
                 title.Position = UDim2.new(0, 25, 0, 0)
                 title.BackgroundTransparency = 1
                 title.Text = name
-                title.TextColor3 = isRare and C.AccentGold or C.TextPrimary
-                title.TextSize = T.Caption
+                title.TextColor3 = isRare and AppConfig.AccentGold or AppConfig.TextPrimary
+                title.TextSize = AppConfig.TextCaption
                 title.Font = Enum.Font.GothamMedium
                 title.TextXAlignment = Enum.TextXAlignment.Left
                 title.TextTruncate = Enum.TextTruncate.AtEnd
                 title.Parent = chip
+
                 local badge = Instance.new("TextLabel")
                 badge.Name = "CountBadge"
                 badge.Size = UDim2.new(0, 22, 0, 16)
                 badge.Position = UDim2.new(1, -26, 0.5, -8)
-                badge.BackgroundColor3 = isRare and C.AccentGold or C.NestedCard
-                badge.Text = "x"..count
-                badge.TextColor3 = isRare and Color3.fromRGB(15,15,20) or C.TextSecondary
-                badge.TextSize = T.Micro
+                badge.BackgroundColor3 = isRare and AppConfig.AccentGold or AppConfig.NestedCardBg
+                badge.Text = "x" .. tostring(count)
+                badge.TextColor3 = isRare and Color3.fromRGB(15, 15, 20) or AppConfig.TextSecondary
+                badge.TextSize = AppConfig.TextMicro
                 badge.Font = Enum.Font.GothamBold
                 badge.Parent = chip
+
                 local bc = Instance.new("UICorner")
                 bc.CornerRadius = UDim.new(0, 4)
                 bc.Parent = badge
+
                 chip.MouseButton1Click:Connect(function()
                     if SearchBox.Text == name then
                         SearchBox.Text = ""
-                        State.currentSearchQuery = ""
-                        ClearSearch.Visible = false
-                        Bus.emit("status", "Filter cleared", C.TextSecondary)
+                        StateStore.currentSearchQuery = ""
+                        ClearSearchBtn.Visible = false
+                        updateStatus("Filter cleared", AppConfig.TextSecondary)
                     else
                         SearchBox.Text = name
-                        State.currentSearchQuery = name
-                        ClearSearch.Visible = true
-                        Bus.emit("status", "Filtered: "..name, C.AccentGreen)
+                        StateStore.currentSearchQuery = name
+                        ClearSearchBtn.Visible = true
+                        updateStatus("Filtered: " .. name, AppConfig.AccentGreen)
                     end
                     populateList()
                 end)
-                chips[name] = chip
+
+                renderedChips[name] = chip
             end
         end
     end
 
     FarmAllBtn.MouseButton1Click:Connect(function()
-        local folder = Services.RenderedEggsFolder
+        local folder = ServiceManager.RenderedEggsFolder
         if not folder then return end
         for _, egg in ipairs(folder:GetChildren()) do
-            if Util.isValidEgg(egg) then State.autoFarmEggs[egg.Name] = true end
+            if Utils.isValidEgg(egg) then StateStore.autoFarmEggs[egg.Name] = true end
         end
         populateList()
-        Bus.emit("status", "All eggs selected", C.AccentGreen)
-        if not State.autoFarmActive then Farm.startAutoFarm() end
+        updateStatus("All Eggs Selected for AutoFarm", AppConfig.AccentGreen)
+        if not StateStore.autoFarmActive then FarmComponent.startAutoFarm(updateStatus, nil) end
     end)
 
     ClearFarmBtn.MouseButton1Click:Connect(function()
-        table.clear(State.autoFarmEggs)
-        table.clear(State.autoFarmProcessed)
-        Farm.stopAutoFarm()
+        table.clear(StateStore.autoFarmEggs)
+        table.clear(StateStore.autoFarmProcessed)
+        FarmComponent.stopAutoFarm()
         populateList()
-        Bus.emit("status", "Cleared", C.AccentRed)
+        updateStatus("Cleared AutoFarm targets", AppConfig.AccentRed)
     end)
 
     SortBtn.MouseButton1Click:Connect(function()
-        if State.sortMode == "Name" then
-            State.sortMode = "Distance"; SortBtn.Text = "Sort: Dist"
+        if StateStore.sortMode == "Name" then
+            StateStore.sortMode = "Distance"
+            StateStore.sortByWeight = false
+            SortBtn.Text = "Sort: Dist"
+        elseif StateStore.sortMode == "Distance" then
+            StateStore.sortMode = "Name"
+            StateStore.sortByWeight = true
+            SortBtn.Text = "Sort: Weight"
         else
-            State.sortMode = "Name"; SortBtn.Text = "Sort: Name"
+            StateStore.sortMode = "Name"
+            StateStore.sortByWeight = false
+            SortBtn.Text = "Sort: Name"
         end
         populateList()
     end)
 
-    local searchDebounce
+    local searchDebounce = nil
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-        local q = SearchBox.Text:match("^%s*(.-)%s*$") or ""
-        ClearSearch.Visible = (#q > 0)
-        if q == State.currentSearchQuery then return end
-        State.currentSearchQuery = q
+        local newQuery = SearchBox.Text:match("^%s*(.-)%s*$") or ""
+        ClearSearchBtn.Visible = (#newQuery > 0)
+        if newQuery == StateStore.currentSearchQuery then return end
+        StateStore.currentSearchQuery = newQuery
         if searchDebounce then task.cancel(searchDebounce) end
         searchDebounce = task.delay(0.12, populateList)
     end)
 
-    ClearSearch.MouseButton1Click:Connect(function()
+    ClearSearchBtn.MouseButton1Click:Connect(function()
         SearchBox.Text = ""
-        State.currentSearchQuery = ""
-        ClearSearch.Visible = false
+        StateStore.currentSearchQuery = ""
+        ClearSearchBtn.Visible = false
         populateList()
     end)
 
-    --====================================
-    -- [Automation tab]
-    --====================================
+    -- [TAB 2] AUTOMATION
     local FarmPanel = tabPanels["Farm"]
+
     local FarmScroll = Instance.new("ScrollingFrame")
     FarmScroll.Size = UDim2.new(1, 0, 1, 0)
     FarmScroll.BackgroundTransparency = 1
     FarmScroll.BorderSizePixel = 0
     FarmScroll.ScrollBarThickness = 3
-    FarmScroll.ScrollBarImageColor3 = Color3.fromRGB(60,60,60)
+    FarmScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
     FarmScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
     FarmScroll.Parent = FarmPanel
-    local FarmL = Instance.new("UIListLayout")
-    FarmL.SortOrder = Enum.SortOrder.LayoutOrder
-    FarmL.Padding = UDim.new(0, 8)
-    FarmL.Parent = FarmScroll
-    FarmL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        FarmScroll.CanvasSize = UDim2.new(0, 0, 0, FarmL.AbsoluteContentSize.Y + 12)
+
+    local FarmScrollLayout = Instance.new("UIListLayout")
+    FarmScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    FarmScrollLayout.Padding = UDim.new(0, 8)
+    FarmScrollLayout.Parent = FarmScroll
+
+    FarmScrollLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        FarmScroll.CanvasSize = UDim2.new(0, 0, 0, FarmScrollLayout.AbsoluteContentSize.Y + 12)
     end)
 
-    local StopCard = Instance.new("Frame")
-    StopCard.Size = UDim2.new(1, -4, 0, 56)
-    StopCard.LayoutOrder = 1
-    StopCard.BackgroundColor3 = C.NestedCard
-    StopCard.Parent = FarmScroll
-    UI.applyCard(StopCard, R.RXL, C.NestedCard, C.BorderInner)
+    local FarmStatusCard = Instance.new("Frame")
+    FarmStatusCard.Size = UDim2.new(1, -4, 0, 56)
+    FarmStatusCard.LayoutOrder = 1
+    FarmStatusCard.BackgroundColor3 = AppConfig.NestedCardBg
+    FarmStatusCard.Parent = FarmScroll
+    UIComponent.applyCard(FarmStatusCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
-    local ScT = Instance.new("TextLabel")
-    ScT.Size = UDim2.new(1, -120, 0, 20)
-    ScT.Position = UDim2.new(0, 14, 0, 8)
-    ScT.BackgroundTransparency = 1
-    ScT.Text = "⚡  Farm Engine Status"
-    ScT.TextColor3 = C.TextPrimary
-    ScT.TextSize = T.Header
-    ScT.Font = Enum.Font.GothamBold
-    ScT.TextXAlignment = Enum.TextXAlignment.Left
-    ScT.Parent = StopCard
+    local FsTitle = Instance.new("TextLabel")
+    FsTitle.Size = UDim2.new(1, -120, 0, 20)
+    FsTitle.Position = UDim2.new(0, 14, 0, 8)
+    FsTitle.BackgroundTransparency = 1
+    FsTitle.Text = "⚡  Farm Engine Status"
+    FsTitle.TextColor3 = AppConfig.TextPrimary
+    FsTitle.TextSize = AppConfig.TextHeader
+    FsTitle.Font = Enum.Font.GothamBold
+    FsTitle.TextXAlignment = Enum.TextXAlignment.Left
+    FsTitle.Parent = FarmStatusCard
 
-    local ScS = Instance.new("TextLabel")
-    ScS.Size = UDim2.new(1, -120, 0, 16)
-    ScS.Position = UDim2.new(0, 14, 0, 30)
-    ScS.BackgroundTransparency = 1
-    ScS.Text = "Master control & quick halt"
-    ScS.TextColor3 = C.TextMuted
-    ScS.TextSize = T.Caption
-    ScS.Font = Enum.Font.GothamMedium
-    ScS.TextXAlignment = Enum.TextXAlignment.Left
-    ScS.Parent = StopCard
+    local FsSub = Instance.new("TextLabel")
+    FsSub.Size = UDim2.new(1, -120, 0, 16)
+    FsSub.Position = UDim2.new(0, 14, 0, 30)
+    FsSub.BackgroundTransparency = 1
+    FsSub.Text = "Master control & quick halt"
+    FsSub.TextColor3 = AppConfig.TextMuted
+    FsSub.TextSize = AppConfig.TextCaption
+    FsSub.Font = Enum.Font.GothamMedium
+    FsSub.TextXAlignment = Enum.TextXAlignment.Left
+    FsSub.Parent = FarmStatusCard
 
-    local StopAll = Instance.new("TextButton")
-    StopAll.Size = UDim2.new(0, 96, 0, 30)
-    StopAll.Position = UDim2.new(1, -110, 0.5, -15)
-    StopAll.BackgroundColor3 = C.AccentRed
-    StopAll.Text = "■ Stop All"
-    StopAll.TextColor3 = Color3.new(1,1,1)
-    StopAll.TextSize = T.Caption
-    StopAll.Font = Enum.Font.GothamBold
-    StopAll.Parent = StopCard
-    UI.styleButton(StopAll, R.RMD, C.AccentRed)
+    local StopFarmBtn = Instance.new("TextButton")
+    StopFarmBtn.Size = UDim2.new(0, 96, 0, 30)
+    StopFarmBtn.Position = UDim2.new(1, -110, 0.5, -15)
+    StopFarmBtn.BackgroundColor3 = AppConfig.AccentRed
+    StopFarmBtn.Text = "■ Stop All"
+    StopFarmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    StopFarmBtn.TextSize = AppConfig.TextCaption
+    StopFarmBtn.Font = Enum.Font.GothamBold
+    StopFarmBtn.Parent = FarmStatusCard
+    UIComponent.styleButton(StopFarmBtn, AppConfig.RadiusMD, AppConfig.AccentRed)
 
-    StopAll.MouseButton1Click:Connect(function()
-        Farm.stopAutoFarm()
-        Farm.stopAutoBestEgg()
-        Rebirth.stop()
-        Bus.emit("status", "All halted", C.AccentRed)
+    StopFarmBtn.MouseButton1Click:Connect(function()
+        FarmComponent.stopAutoFarm()
+        FarmComponent.stopAutoBestEgg()
+        RebirthComponent.stopAutoRebirth()
+        updateStatus("Engine Halted", AppConfig.AccentRed)
     end)
 
-    UI.createToggle(FarmScroll, "Auto Selected Eggs Farm",
-        "คำนวณและฟาร์มไข่เฉพาะรายการที่เลือกไว้",
-        State.autoFarmActive, function(en)
-            if en then Farm.startAutoFarm()
-            else Farm.stopAutoFarm()
-                Bus.emit("status", "AutoFarm stopped", C.TextSecondary)
-            end
-        end)
+    UIComponent.createToggle(FarmScroll, "Auto Selected Eggs Farm", "คำนวณและฟาร์มไข่เฉพาะรายการที่เลือกไว้", StateStore.autoFarmActive, function(enabled)
+        if enabled then FarmComponent.startAutoFarm(updateStatus, nil)
+        else FarmComponent.stopAutoFarm(); updateStatus("AutoFarm Stopped", AppConfig.TextSecondary) end
+    end)
 
-    UI.createToggle(FarmScroll, "Auto Best Egg Target",
-        "ค้นหาและเก็บไข่ที่ดีที่สุดโดยอัตโนมัติ",
-        State.autoBestEggActive, function(en)
-            if en then Farm.startAutoBestEgg()
-            else Farm.stopAutoBestEgg()
-                Bus.emit("status", "Best egg stopped", C.TextSecondary)
-            end
-        end)
+    UIComponent.createToggle(FarmScroll, "Auto Best Egg Target", "ค้นหาและเก็บไข่ที่ดีที่สุดโดยอัตโนมัติ", StateStore.autoBestEggActive, function(enabled)
+        if enabled then FarmComponent.startAutoBestEgg(updateStatus)
+        else FarmComponent.stopAutoBestEgg(); updateStatus("Best Egg Farm Stopped", AppConfig.TextSecondary) end
+    end)
 
-    UI.createToggle(FarmScroll, "Auto Rebirth & Collect",
-        "เก็บไข่ที่ขาดและกด Rebirth อัตโนมัติ",
-        State.autoRebirthActive, function(en)
-            if en then Rebirth.start()
-            else Rebirth.stop()
-                Bus.emit("status", "Auto Rebirth stopped", C.TextSecondary)
-            end
-        end)
+    UIComponent.createToggle(FarmScroll, "Auto Rebirth & Collect", "เก็บไข่ที่ขาดและกด Rebirth อัตโนมัติ", StateStore.autoRebirthActive, function(enabled)
+        if enabled then RebirthComponent.startAutoRebirth(updateStatus, nil)
+        else RebirthComponent.stopAutoRebirth(); updateStatus("Auto Rebirth Stopped", AppConfig.TextSecondary) end
+    end)
 
-    UI.createSlider(FarmScroll, "Movement Speed (ความเร็ว)",
-        200, 1000, Config.Movement.Speed, "studs/s",
-        function(v) Config.Movement.Speed = v end)
+    UIComponent.createSlider(FarmScroll, "Movement Speed (ความเร็ว)", 200, 1000, AppConfig.MovementSpeed, "studs/s", function(val)
+        AppConfig.MovementSpeed = val
+    end)
 
-    UI.createSlider(FarmScroll, "Auto Collect Hold (กด E)",
-        0.5, 5, Config.Farm.AutoFarmHoldTime, "sec",
-        function(v)
-            Config.Farm.AutoFarmHoldTime = v
-            Config.Farm.AutoEggHoldTime = v
-        end)
+    UIComponent.createSlider(FarmScroll, "Auto Collect Hold (กด E)", 0.5, 5, AppConfig.AutoFarmHoldTime, "sec", function(val)
+        AppConfig.AutoFarmHoldTime = val
+        AppConfig.AutoEggHoldTime = val
+    end)
 
-    UI.createSlider(FarmScroll, "Egg Cooldown (คูลดาวน์)",
-        5, 30, Config.Farm.EggCooldown, "sec",
-        function(v) Config.Farm.EggCooldown = v end)
+    UIComponent.createSlider(FarmScroll, "Egg Cooldown (คูลดาวน์)", 5, 30, AppConfig.EggCooldownSeconds, "sec", function(val)
+        AppConfig.EggCooldownSeconds = val
+    end)
 
-    local MoveCard = Instance.new("Frame")
-    MoveCard.Size = UDim2.new(1, -4, 0, 76)
-    MoveCard.LayoutOrder = 5
-    MoveCard.BackgroundColor3 = C.NestedCard
-    MoveCard.Parent = FarmScroll
-    UI.applyCard(MoveCard, R.RXL, C.NestedCard, C.BorderInner)
+    local MovementCard = Instance.new("Frame")
+    MovementCard.Size = UDim2.new(1, -4, 0, 76)
+    MovementCard.LayoutOrder = 5
+    MovementCard.BackgroundColor3 = AppConfig.NestedCardBg
+    MovementCard.Parent = FarmScroll
+    UIComponent.applyCard(MovementCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
-    local McT = Instance.new("TextLabel")
-    McT.Size = UDim2.new(1, -20, 0, 20)
-    McT.Position = UDim2.new(0, 14, 0, 8)
-    McT.BackgroundTransparency = 1
-    McT.Text = "Movement Mode"
-    McT.TextColor3 = C.TextPrimary
-    McT.TextSize = T.Header
-    McT.Font = Enum.Font.GothamBold
-    McT.TextXAlignment = Enum.TextXAlignment.Left
-    McT.Parent = MoveCard
+    local MvTitle = Instance.new("TextLabel")
+    MvTitle.Size = UDim2.new(1, -20, 0, 20)
+    MvTitle.Position = UDim2.new(0, 14, 0, 8)
+    MvTitle.BackgroundTransparency = 1
+    MvTitle.Text = "Movement Mode"
+    MvTitle.TextColor3 = AppConfig.TextPrimary
+    MvTitle.TextSize = AppConfig.TextHeader
+    MvTitle.Font = Enum.Font.GothamBold
+    MvTitle.TextXAlignment = Enum.TextXAlignment.Left
+    MvTitle.Parent = MovementCard
 
-    local ModeFly = Instance.new("TextButton")
-    ModeFly.Size = UDim2.new(0.5, -18, 0, 30)
-    ModeFly.Position = UDim2.new(0, 10, 0, 36)
-    ModeFly.BackgroundColor3 = C.AccentGreen
-    ModeFly.Text = "⚡ Glide + Noclip"
-    ModeFly.TextColor3 = Color3.fromRGB(10,20,15)
-    ModeFly.TextSize = T.Caption
-    ModeFly.Font = Enum.Font.GothamBold
-    ModeFly.Parent = MoveCard
-    UI.styleButton(ModeFly, R.RMD, C.AccentGreen)
+    local ModeAutoFarmBtn = Instance.new("TextButton")
+    ModeAutoFarmBtn.Size = UDim2.new(0.5, -18, 0, 30)
+    ModeAutoFarmBtn.Position = UDim2.new(0, 10, 0, 36)
+    ModeAutoFarmBtn.BackgroundColor3 = AppConfig.AccentGreen
+    ModeAutoFarmBtn.Text = "⚡ Glide + Noclip"
+    ModeAutoFarmBtn.TextColor3 = Color3.fromRGB(10, 20, 15)
+    ModeAutoFarmBtn.TextSize = AppConfig.TextCaption
+    ModeAutoFarmBtn.Font = Enum.Font.GothamBold
+    ModeAutoFarmBtn.Parent = MovementCard
+    UIComponent.styleButton(ModeAutoFarmBtn, AppConfig.RadiusMD, AppConfig.AccentGreen)
 
-    local ModeTP = Instance.new("TextButton")
-    ModeTP.Size = UDim2.new(0.5, -18, 0, 30)
-    ModeTP.Position = UDim2.new(0.5, 8, 0, 36)
-    ModeTP.BackgroundColor3 = C.Recessed
-    ModeTP.Text = "🌀 Instant TP"
-    ModeTP.TextColor3 = C.TextSecondary
-    ModeTP.TextSize = T.Caption
-    ModeTP.Font = Enum.Font.GothamBold
-    ModeTP.Parent = MoveCard
-    UI.styleButton(ModeTP, R.RMD, C.Recessed)
+    local ModeTeleportBtn = Instance.new("TextButton")
+    ModeTeleportBtn.Size = UDim2.new(0.5, -18, 0, 30)
+    ModeTeleportBtn.Position = UDim2.new(0.5, 8, 0, 36)
+    ModeTeleportBtn.BackgroundColor3 = AppConfig.RecessedBg
+    ModeTeleportBtn.Text = "🌀 Instant TP"
+    ModeTeleportBtn.TextColor3 = AppConfig.TextSecondary
+    ModeTeleportBtn.TextSize = AppConfig.TextCaption
+    ModeTeleportBtn.Font = Enum.Font.GothamBold
+    ModeTeleportBtn.Parent = MovementCard
+    UIComponent.styleButton(ModeTeleportBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
 
-    local function refreshMoveUI()
-        if State.movementMode == "AutoFarm" then
-            UI.setButtonDefault(ModeFly, C.AccentGreen)
-            ModeFly.TextColor3 = Color3.fromRGB(10,20,15)
-            UI.setButtonDefault(ModeTP, C.Recessed)
-            ModeTP.TextColor3 = C.TextSecondary
+    local function updateMovementModeUI()
+        if StateStore.movementMode == "AutoFarm" then
+            UIComponent.setButtonDefault(ModeAutoFarmBtn, AppConfig.AccentGreen)
+            ModeAutoFarmBtn.TextColor3 = Color3.fromRGB(10, 20, 15)
+            UIComponent.setButtonDefault(ModeTeleportBtn, AppConfig.RecessedBg)
+            ModeTeleportBtn.TextColor3 = AppConfig.TextSecondary
         else
-            UI.setButtonDefault(ModeFly, C.Recessed)
-            ModeFly.TextColor3 = C.TextSecondary
-            UI.setButtonDefault(ModeTP, C.AccentBlue)
-            ModeTP.TextColor3 = Color3.new(1,1,1)
+            UIComponent.setButtonDefault(ModeAutoFarmBtn, AppConfig.RecessedBg)
+            ModeAutoFarmBtn.TextColor3 = AppConfig.TextSecondary
+            UIComponent.setButtonDefault(ModeTeleportBtn, AppConfig.AccentBlue)
+            ModeTeleportBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         end
     end
 
-    ModeFly.MouseButton1Click:Connect(function()
-        Movement.stop()
-        State.movementMode = "AutoFarm"
-        refreshMoveUI()
-        Bus.emit("status", "Movement: Glide", C.AccentGreen)
+    ModeAutoFarmBtn.MouseButton1Click:Connect(function()
+        MovementComponent.stop()
+        StateStore.movementMode = "AutoFarm"
+        updateMovementModeUI()
+        updateStatus("Movement: Glide + Noclip", AppConfig.AccentGreen)
     end)
-    ModeTP.MouseButton1Click:Connect(function()
-        Movement.stop()
-        State.movementMode = "Teleport"
-        refreshMoveUI()
-        Bus.emit("status", "Movement: TP", C.AccentBlue)
+
+    ModeTeleportBtn.MouseButton1Click:Connect(function()
+        MovementComponent.stop()
+        StateStore.movementMode = "Teleport"
+        updateMovementModeUI()
+        updateStatus("Movement: Instant TP", AppConfig.AccentBlue)
     end)
 
     local UtilCard = Instance.new("Frame")
     UtilCard.Size = UDim2.new(1, -4, 0, 76)
     UtilCard.LayoutOrder = 6
-    UtilCard.BackgroundColor3 = C.NestedCard
+    UtilCard.BackgroundColor3 = AppConfig.NestedCardBg
     UtilCard.Parent = FarmScroll
-    UI.applyCard(UtilCard, R.RXL, C.NestedCard, C.BorderInner)
+    UIComponent.applyCard(UtilCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
-    local UcT = Instance.new("TextLabel")
-    UcT.Size = UDim2.new(1, -20, 0, 20)
-    UcT.Position = UDim2.new(0, 14, 0, 8)
-    UcT.BackgroundTransparency = 1
-    UcT.Text = "Quick Teleport & Global ESP"
-    UcT.TextColor3 = C.TextPrimary
-    UcT.TextSize = T.Header
-    UcT.Font = Enum.Font.GothamBold
-    UcT.TextXAlignment = Enum.TextXAlignment.Left
-    UcT.Parent = UtilCard
+    local UtTitle = Instance.new("TextLabel")
+    UtTitle.Size = UDim2.new(1, -20, 0, 20)
+    UtTitle.Position = UDim2.new(0, 14, 0, 8)
+    UtTitle.BackgroundTransparency = 1
+    UtTitle.Text = "Quick Teleport & Global ESP"
+    UtTitle.TextColor3 = AppConfig.TextPrimary
+    UtTitle.TextSize = AppConfig.TextHeader
+    UtTitle.Font = Enum.Font.GothamBold
+    UtTitle.TextXAlignment = Enum.TextXAlignment.Left
+    UtTitle.Parent = UtilCard
 
-    local ESPAll = Instance.new("TextButton")
-    ESPAll.Size = UDim2.new(0.33, -10, 0, 30)
-    ESPAll.Position = UDim2.new(0, 10, 0, 36)
-    ESPAll.BackgroundColor3 = C.Recessed
-    ESPAll.Text = "👁️ ESP All: OFF"
-    ESPAll.TextColor3 = C.TextSecondary
-    ESPAll.TextSize = T.Caption
-    ESPAll.Font = Enum.Font.GothamBold
-    ESPAll.Parent = UtilCard
-    UI.styleButton(ESPAll, R.RMD, C.Recessed)
+    local GlobalESPToggleBtn = Instance.new("TextButton")
+    GlobalESPToggleBtn.Size = UDim2.new(0.33, -10, 0, 30)
+    GlobalESPToggleBtn.Position = UDim2.new(0, 10, 0, 36)
+    GlobalESPToggleBtn.BackgroundColor3 = AppConfig.RecessedBg
+    GlobalESPToggleBtn.Text = "👁️ ESP All: OFF"
+    GlobalESPToggleBtn.TextColor3 = AppConfig.TextSecondary
+    GlobalESPToggleBtn.TextSize = AppConfig.TextCaption
+    GlobalESPToggleBtn.Font = Enum.Font.GothamBold
+    GlobalESPToggleBtn.Parent = UtilCard
+    UIComponent.styleButton(GlobalESPToggleBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
 
-    local TPHome = Instance.new("TextButton")
-    TPHome.Size = UDim2.new(0.33, -10, 0, 30)
-    TPHome.Position = UDim2.new(0.33, 6, 0, 36)
-    TPHome.BackgroundColor3 = C.Recessed
-    TPHome.Text = "🏠 TP Home"
-    TPHome.TextColor3 = C.TextPrimary
-    TPHome.TextSize = T.Caption
-    TPHome.Font = Enum.Font.GothamBold
-    TPHome.Parent = UtilCard
-    UI.styleButton(TPHome, R.RMD, C.Recessed)
+    local TPHomeBtn = Instance.new("TextButton")
+    TPHomeBtn.Size = UDim2.new(0.33, -10, 0, 30)
+    TPHomeBtn.Position = UDim2.new(0.33, 6, 0, 36)
+    TPHomeBtn.BackgroundColor3 = AppConfig.RecessedBg
+    TPHomeBtn.Text = "🏠 TP Home"
+    TPHomeBtn.TextColor3 = AppConfig.TextPrimary
+    TPHomeBtn.TextSize = AppConfig.TextCaption
+    TPHomeBtn.Font = Enum.Font.GothamBold
+    TPHomeBtn.Parent = UtilCard
+    UIComponent.styleButton(TPHomeBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
 
-    local AntiAFK = Instance.new("TextButton")
-    AntiAFK.Size = UDim2.new(0.34, -10, 0, 30)
-    AntiAFK.Position = UDim2.new(0.66, 6, 0, 36)
-    AntiAFK.BackgroundColor3 = C.Recessed
-    AntiAFK.Text = "🛡️ Anti-AFK: ON"
-    AntiAFK.TextColor3 = C.AccentGreen
-    AntiAFK.TextSize = T.Caption
-    AntiAFK.Font = Enum.Font.GothamBold
-    AntiAFK.Parent = UtilCard
-    UI.styleButton(AntiAFK, R.RMD, C.Recessed)
+    local AntiAFKToggleBtn = Instance.new("TextButton")
+    AntiAFKToggleBtn.Size = UDim2.new(0.34, -10, 0, 30)
+    AntiAFKToggleBtn.Position = UDim2.new(0.66, 6, 0, 36)
+    AntiAFKToggleBtn.BackgroundColor3 = AppConfig.RecessedBg
+    AntiAFKToggleBtn.Text = "🛡️ Anti-AFK: ON"
+    AntiAFKToggleBtn.TextColor3 = AppConfig.AccentGreen
+    AntiAFKToggleBtn.TextSize = AppConfig.TextCaption
+    AntiAFKToggleBtn.Font = Enum.Font.GothamBold
+    AntiAFKToggleBtn.Parent = UtilCard
+    UIComponent.styleButton(AntiAFKToggleBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
 
-    ESPAll.MouseButton1Click:Connect(function()
-        State.mainESPActive = not State.mainESPActive
-        if State.mainESPActive then
-            ESPAll.Text = "👁️ ESP All: ON"
-            ESPAll.TextColor3 = C.AccentGreen
-            Bus.emit("status", "Global ESP ON", C.AccentGreen)
+    GlobalESPToggleBtn.MouseButton1Click:Connect(function()
+        StateStore.mainESPActive = not StateStore.mainESPActive
+        if StateStore.mainESPActive then
+            GlobalESPToggleBtn.Text = "👁️ ESP All: ON"
+            GlobalESPToggleBtn.TextColor3 = AppConfig.AccentGreen
+            updateStatus("Global ESP: ON", AppConfig.AccentGreen)
         else
-            ESPAll.Text = "👁️ ESP All: OFF"
-            ESPAll.TextColor3 = C.TextSecondary
-            Bus.emit("status", "Global ESP OFF", C.TextSecondary)
+            GlobalESPToggleBtn.Text = "👁️ ESP All: OFF"
+            GlobalESPToggleBtn.TextColor3 = AppConfig.TextSecondary
+            updateStatus("Global ESP: OFF", AppConfig.TextSecondary)
         end
-        ESP.updateAll()
+        ESPComponent.updateAll()
     end)
 
-    TPHome.MouseButton1Click:Connect(function()
-        if Plot.teleportAndDeposit() then
-            Bus.emit("status", "At Home", C.AccentGreen)
+    TPHomeBtn.MouseButton1Click:Connect(function()
+        local ok = PlotComponent.teleportAndDeposit()
+        if ok then updateStatus("At Home Plot (Egg Cleared)", AppConfig.AccentGreen)
+        else updateStatus("Home Plot Not Found", AppConfig.AccentRed) end
+    end)
+
+    AntiAFKToggleBtn.MouseButton1Click:Connect(function()
+        StateStore.antiAFKActive = not StateStore.antiAFKActive
+        StabilityComponent.setupAntiAFK(StateStore.antiAFKActive)
+        if StateStore.antiAFKActive then
+            AntiAFKToggleBtn.Text = "🛡️ Anti-AFK: ON"
+            AntiAFKToggleBtn.TextColor3 = AppConfig.AccentGreen
+            updateStatus("Anti-AFK Active", AppConfig.AccentGreen)
         else
-            Bus.emit("status", "Home unreachable", C.AccentRed)
+            AntiAFKToggleBtn.Text = "🛡️ Anti-AFK: OFF"
+            AntiAFKToggleBtn.TextColor3 = AppConfig.TextMuted
+            updateStatus("Anti-AFK Inactive", AppConfig.TextSecondary)
         end
     end)
 
-    AntiAFK.MouseButton1Click:Connect(function()
-        State.antiAFKActive = not State.antiAFKActive
-        Stability.setAntiAFK(State.antiAFKActive)
-        if State.antiAFKActive then
-            AntiAFK.Text = "🛡️ Anti-AFK: ON"
-            AntiAFK.TextColor3 = C.AccentGreen
-            Bus.emit("status", "Anti-AFK ON", C.AccentGreen)
+    -- ESP DISPLAY SETTINGS CARD
+    local ESPSettingsCard = Instance.new("Frame")
+    ESPSettingsCard.Size = UDim2.new(1, -4, 0, 316)
+    ESPSettingsCard.LayoutOrder = 7
+    ESPSettingsCard.BackgroundColor3 = AppConfig.NestedCardBg
+    ESPSettingsCard.Parent = FarmScroll
+    UIComponent.applyCard(ESPSettingsCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+    local EspTitle = Instance.new("TextLabel")
+    EspTitle.Size = UDim2.new(1, -20, 0, 20)
+    EspTitle.Position = UDim2.new(0, 14, 0, 8)
+    EspTitle.BackgroundTransparency = 1
+    EspTitle.Text = "👁️  ESP Display Settings"
+    EspTitle.TextColor3 = AppConfig.TextPrimary
+    EspTitle.TextSize = AppConfig.TextHeader
+    EspTitle.Font = Enum.Font.GothamBold
+    EspTitle.TextXAlignment = Enum.TextXAlignment.Left
+    EspTitle.Parent = ESPSettingsCard
+
+    local showWeightToggle = UIComponent.createToggle(ESPSettingsCard, "Show Weight (kg)", "แสดงน้ำหนักไข่บนบิลบอร์ด", StateStore.espShowWeight, function(v)
+        StateStore.espShowWeight = v
+        ESPComponent.refreshAllBillboards()
+    end)
+    showWeightToggle.Position = UDim2.new(0, 4, 0, 32)
+    showWeightToggle.Size = UDim2.new(1, -8, 0, 48)
+
+    local showDistToggle = UIComponent.createToggle(ESPSettingsCard, "Show Distance + Compass", "แสดงระยะทางและทิศทาง", StateStore.espShowDistance, function(v)
+        StateStore.espShowDistance = v
+        ESPComponent.refreshAllBillboards()
+    end)
+    showDistToggle.Position = UDim2.new(0, 4, 0, 84)
+    showDistToggle.Size = UDim2.new(1, -8, 0, 48)
+
+    local rareOnlyToggle = UIComponent.createToggle(ESPSettingsCard, "Rare Eggs Only", "แสดงเฉพาะไข่หายาก", StateStore.espRareOnly, function(v)
+        StateStore.espRareOnly = v
+        ESPComponent.reapplySettings()
+    end)
+    rareOnlyToggle.Position = UDim2.new(0, 4, 0, 136)
+    rareOnlyToggle.Size = UDim2.new(1, -8, 0, 48)
+
+    local compassToggle = UIComponent.createToggle(ESPSettingsCard, "Show Compass Bearing", "แสดงทิศทาง (N/NE/E/...)", StateStore.espShowCompass, function(v)
+        StateStore.espShowCompass = v
+        ESPComponent.refreshAllBillboards()
+    end)
+    compassToggle.Position = UDim2.new(0, 4, 0, 188)
+    compassToggle.Size = UDim2.new(1, -8, 0, 48)
+
+    local maxDistSlider = UIComponent.createSlider(ESPSettingsCard, "Max ESP Render Distance", 50, 2000, StateStore.espMaxRenderDistance, "studs", function(v)
+        StateStore.espMaxRenderDistance = v
+        ESPComponent.reapplySettings()
+    end)
+    maxDistSlider.Position = UDim2.new(0, 4, 0, 240)
+    maxDistSlider.Size = UDim2.new(1, -8, 0, 60)
+
+    -- [TAB 3] BACKPACK
+    local BackpackPanel = tabPanels["Backpack"]
+
+    local BpToolbarCard = Instance.new("Frame")
+    BpToolbarCard.Size = UDim2.new(1, 0, 0, 46)
+    BpToolbarCard.BackgroundColor3 = AppConfig.NestedCardBg
+    BpToolbarCard.Parent = BackpackPanel
+    UIComponent.applyCard(BpToolbarCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+    local BackpackCountBadge = Instance.new("TextLabel")
+    BackpackCountBadge.Size = UDim2.new(0, 120, 1, 0)
+    BackpackCountBadge.Position = UDim2.new(0, 14, 0, 0)
+    BackpackCountBadge.BackgroundTransparency = 1
+    BackpackCountBadge.Text = "🎒 Items: (0)"
+    BackpackCountBadge.TextColor3 = AppConfig.AccentBlue
+    BackpackCountBadge.TextSize = AppConfig.TextHeader
+    BackpackCountBadge.Font = Enum.Font.GothamBold
+    BackpackCountBadge.TextXAlignment = Enum.TextXAlignment.Left
+    BackpackCountBadge.Parent = BpToolbarCard
+
+    local BpSearchBoxContainer = Instance.new("Frame")
+    BpSearchBoxContainer.Size = UDim2.new(1, -230, 0, 28)
+    BpSearchBoxContainer.Position = UDim2.new(0, 134, 0.5, -14)
+    BpSearchBoxContainer.BackgroundColor3 = AppConfig.RecessedBg
+    BpSearchBoxContainer.Parent = BpToolbarCard
+    UIComponent.applyCard(BpSearchBoxContainer, AppConfig.RadiusMD, AppConfig.RecessedBg, AppConfig.BorderInner)
+
+    local BackpackSearchBox = Instance.new("TextBox")
+    BackpackSearchBox.Size = UDim2.new(1, -26, 1, 0)
+    BackpackSearchBox.Position = UDim2.new(0, 10, 0, 0)
+    BackpackSearchBox.BackgroundTransparency = 1
+    BackpackSearchBox.PlaceholderText = "🔍 Search backpack..."
+    BackpackSearchBox.PlaceholderColor3 = AppConfig.TextMuted
+    BackpackSearchBox.Text = ""
+    BackpackSearchBox.TextColor3 = AppConfig.TextPrimary
+    BackpackSearchBox.TextSize = AppConfig.TextCaption
+    BackpackSearchBox.Font = Enum.Font.GothamMedium
+    BackpackSearchBox.TextXAlignment = Enum.TextXAlignment.Left
+    BackpackSearchBox.ClearTextOnFocus = false
+    BackpackSearchBox.Parent = BpSearchBoxContainer
+
+    local BpClearSearchBtn = Instance.new("TextButton")
+    BpClearSearchBtn.Size = UDim2.new(0, 22, 0, 22)
+    BpClearSearchBtn.Position = UDim2.new(1, -24, 0.5, -11)
+    BpClearSearchBtn.BackgroundTransparency = 1
+    BpClearSearchBtn.Text = "✕"
+    BpClearSearchBtn.TextColor3 = AppConfig.TextMuted
+    BpClearSearchBtn.TextSize = 10
+    BpClearSearchBtn.Font = Enum.Font.GothamBold
+    BpClearSearchBtn.Visible = false
+    BpClearSearchBtn.Parent = BpSearchBoxContainer
+
+    local PrintBackpackBtn = Instance.new("TextButton")
+    PrintBackpackBtn.Size = UDim2.new(0, 76, 0, 28)
+    PrintBackpackBtn.Position = UDim2.new(1, -86, 0.5, -14)
+    PrintBackpackBtn.BackgroundColor3 = AppConfig.RecessedBg
+    PrintBackpackBtn.Text = "Dump Log"
+    PrintBackpackBtn.TextColor3 = AppConfig.AccentBlue
+    PrintBackpackBtn.TextSize = AppConfig.TextCaption
+    PrintBackpackBtn.Font = Enum.Font.GothamBold
+    PrintBackpackBtn.Parent = BpToolbarCard
+    UIComponent.styleButton(PrintBackpackBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
+
+    local BpListCard = Instance.new("Frame")
+    BpListCard.Size = UDim2.new(1, 0, 1, -54)
+    BpListCard.Position = UDim2.new(0, 0, 0, 54)
+    BpListCard.BackgroundColor3 = AppConfig.NestedCardBg
+    BpListCard.Parent = BackpackPanel
+    UIComponent.applyCard(BpListCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+    local BackpackScroll = Instance.new("ScrollingFrame")
+    BackpackScroll.Size = UDim2.new(1, -16, 1, -16)
+    BackpackScroll.Position = UDim2.new(0, 8, 0, 8)
+    BackpackScroll.BackgroundTransparency = 1
+    BackpackScroll.BorderSizePixel = 0
+    BackpackScroll.ScrollBarThickness = 3
+    BackpackScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
+    BackpackScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    BackpackScroll.Parent = BpListCard
+
+    local BackpackLayout = Instance.new("UIListLayout")
+    BackpackLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    BackpackLayout.Padding = UDim.new(0, 4)
+    BackpackLayout.Parent = BackpackScroll
+
+    BackpackLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        BackpackScroll.CanvasSize = UDim2.new(0, 0, 0, BackpackLayout.AbsoluteContentSize.Y + 6)
+    end)
+
+    updateBackpackUI = function()
+        for _, child in ipairs(BackpackScroll:GetChildren()) do
+            if child ~= BackpackLayout then child:Destroy() end
+        end
+
+        local allItems = Utils.getBackpackItems()
+        local query = (StateStore.backpackSearchQuery or ""):lower():match("^%s*(.-)%s*$")
+        local filteredItems = {}
+
+        if query and #query > 0 then
+            for _, it in ipairs(allItems) do
+                if string.find(it.name:lower(), query, 1, true) then
+                    table.insert(filteredItems, it)
+                end
+            end
         else
-            AntiAFK.Text = "🛡️ Anti-AFK: OFF"
-            AntiAFK.TextColor3 = C.TextMuted
-            Bus.emit("status", "Anti-AFK OFF", C.TextSecondary)
+            filteredItems = allItems
         end
-    end)
 
-    --====================================
-    -- [Time tab]
-    --====================================
-    local TimePanel = tabPanels["Time"]
-    local TimeScroll = Instance.new("ScrollingFrame")
-    TimeScroll.Size = UDim2.new(1, 0, 1, 0)
-    TimeScroll.BackgroundTransparency = 1
-    TimeScroll.BorderSizePixel = 0
-    TimeScroll.ScrollBarThickness = 3
-    TimeScroll.ScrollBarImageColor3 = Color3.fromRGB(60,60,60)
-    TimeScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    TimeScroll.Parent = TimePanel
-    local TL = Instance.new("UIListLayout")
-    TL.SortOrder = Enum.SortOrder.LayoutOrder
-    TL.Padding = UDim.new(0, 8)
-    TL.Parent = TimeScroll
-    TL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        TimeScroll.CanvasSize = UDim2.new(0, 0, 0, TL.AbsoluteContentSize.Y + 12)
-    end)
+        BackpackCountBadge.Text = string.format("🎒 Items: (%d)", #allItems)
 
-    local BigClockCard = Instance.new("Frame")
-    BigClockCard.Size = UDim2.new(1, -4, 0, 92)
-    BigClockCard.LayoutOrder = 1
-    BigClockCard.BackgroundColor3 = C.Recessed
-    BigClockCard.Parent = TimeScroll
-    UI.applyCard(BigClockCard, R.RXL, C.Recessed, C.BorderInner)
-
-    local BigClock = Instance.new("TextLabel")
-    BigClock.Size = UDim2.new(1, -20, 0, 44)
-    BigClock.Position = UDim2.new(0, 10, 0, 12)
-    BigClock.BackgroundTransparency = 1
-    BigClock.Text = os.date("%H:%M:%S")
-    BigClock.TextColor3 = C.AccentBlue
-    BigClock.TextSize = 34
-    BigClock.Font = Enum.Font.GothamBold
-    BigClock.TextXAlignment = Enum.TextXAlignment.Center
-    BigClock.Parent = BigClockCard
-
-    local BigDate = Instance.new("TextLabel")
-    BigDate.Size = UDim2.new(1, -20, 0, 20)
-    BigDate.Position = UDim2.new(0, 10, 0, 60)
-    BigDate.BackgroundTransparency = 1
-    BigDate.Text = os.date("%A, %B %d, %Y")
-    BigDate.TextColor3 = C.TextSecondary
-    BigDate.TextSize = T.Body
-    BigDate.Font = Enum.Font.GothamMedium
-    BigDate.TextXAlignment = Enum.TextXAlignment.Center
-    BigDate.Parent = BigClockCard
-
-    local StatsCard = Instance.new("Frame")
-    StatsCard.Size = UDim2.new(1, -4, 0, 150)
-    StatsCard.LayoutOrder = 2
-    StatsCard.BackgroundColor3 = C.NestedCard
-    StatsCard.Parent = TimeScroll
-    UI.applyCard(StatsCard, R.RXL, C.NestedCard, C.BorderInner)
-
-    local StT = Instance.new("TextLabel")
-    StT.Size = UDim2.new(1, -20, 0, 20)
-    StT.Position = UDim2.new(0, 14, 0, 8)
-    StT.BackgroundTransparency = 1
-    StT.Text = "📊  Session Statistics"
-    StT.TextColor3 = C.TextPrimary
-    StT.TextSize = T.Header
-    StT.Font = Enum.Font.GothamBold
-    StT.TextXAlignment = Enum.TextXAlignment.Left
-    StT.Parent = StatsCard
-
-    local StInner = Instance.new("Frame")
-    StInner.Size = UDim2.new(1, -20, 0, 106)
-    StInner.Position = UDim2.new(0, 10, 0, 34)
-    StInner.BackgroundColor3 = C.Recessed
-    StInner.Parent = StatsCard
-    UI.applyCard(StInner, R.RLG, C.Recessed, C.BorderInner)
-
-    local function statRow(parent, y, icon, title, color)
-        local r = Instance.new("Frame")
-        r.Size = UDim2.new(1, 0, 0, 26)
-        r.Position = UDim2.new(0, 0, 0, y)
-        r.BackgroundTransparency = 1
-        r.Parent = parent
-        local i = Instance.new("TextLabel")
-        i.Size = UDim2.new(0, 24, 1, 0)
-        i.Position = UDim2.new(0, 10, 0, 0)
-        i.BackgroundTransparency = 1
-        i.Text = icon
-        i.TextSize = 12
-        i.Font = Enum.Font.GothamBold
-        i.Parent = r
-        local t = Instance.new("TextLabel")
-        t.Size = UDim2.new(0.5, 0, 1, 0)
-        t.Position = UDim2.new(0, 34, 0, 0)
-        t.BackgroundTransparency = 1
-        t.Text = title
-        t.TextColor3 = C.TextSecondary
-        t.TextSize = T.Caption
-        t.Font = Enum.Font.GothamMedium
-        t.TextXAlignment = Enum.TextXAlignment.Left
-        t.Parent = r
-        local v = Instance.new("TextLabel")
-        v.Size = UDim2.new(0.5, -10, 1, 0)
-        v.Position = UDim2.new(0.5, 0, 0, 0)
-        v.BackgroundTransparency = 1
-        v.Text = "--"
-        v.TextColor3 = color or C.TextPrimary
-        v.TextSize = T.Body
-        v.Font = Enum.Font.GothamBold
-        v.TextXAlignment = Enum.TextXAlignment.Right
-        v.Parent = r
-        return v
-    end
-
-    local tmCur  = statRow(StInner, 6,  "🕐", "Current Time",    C.AccentBlue)
-    local tmUp   = statRow(StInner, 32, "⏳", "Session Uptime",  C.AccentGreen)
-    local tmSt   = statRow(StInner, 58, "📅", "Session Started", C.TextSecondary)
-    local tmEpm  = statRow(StInner, 84, "🥚", "Eggs / Minute",   C.AccentGold)
-    tmSt.Text = os.date("%H:%M:%S", State.sessionStartTime)
-
-    local TotalsCard = Instance.new("Frame")
-    TotalsCard.Size = UDim2.new(1, -4, 0, 96)
-    TotalsCard.LayoutOrder = 3
-    TotalsCard.BackgroundColor3 = C.NestedCard
-    TotalsCard.Parent = TimeScroll
-    UI.applyCard(TotalsCard, R.RXL, C.NestedCard, C.BorderInner)
-
-    local TcT = Instance.new("TextLabel")
-    TcT.Size = UDim2.new(1, -20, 0, 20)
-    TcT.Position = UDim2.new(0, 14, 0, 8)
-    TcT.BackgroundTransparency = 1
-    TcT.Text = "🥚  Total Collected This Session"
-    TcT.TextColor3 = C.TextPrimary
-    TcT.TextSize = T.Header
-    TcT.Font = Enum.Font.GothamBold
-    TcT.TextXAlignment = Enum.TextXAlignment.Left
-    TcT.Parent = TotalsCard
-
-    local TotalCnt = Instance.new("TextLabel")
-    TotalCnt.Size = UDim2.new(0.5, -20, 0, 46)
-    TotalCnt.Position = UDim2.new(0, 10, 0, 36)
-    TotalCnt.BackgroundTransparency = 1
-    TotalCnt.Text = "0"
-    TotalCnt.TextColor3 = C.AccentGold
-    TotalCnt.TextSize = 34
-    TotalCnt.Font = Enum.Font.GothamBold
-    TotalCnt.TextXAlignment = Enum.TextXAlignment.Center
-    TotalCnt.Parent = TotalsCard
-
-    local TotalCap = Instance.new("TextLabel")
-    TotalCap.Size = UDim2.new(0.5, -20, 0, 46)
-    TotalCap.Position = UDim2.new(0.5, 10, 0, 36)
-    TotalCap.BackgroundTransparency = 1
-    TotalCap.Text = "0 rare collected"
-    TotalCap.TextColor3 = C.TextSecondary
-    TotalCap.TextSize = T.Body
-    TotalCap.Font = Enum.Font.GothamMedium
-    TotalCap.TextXAlignment = Enum.TextXAlignment.Center
-    TotalCap.Parent = TotalsCard
-
-    local CtrlCard = Instance.new("Frame")
-    CtrlCard.Size = UDim2.new(1, -4, 0, 76)
-    CtrlCard.LayoutOrder = 4
-    CtrlCard.BackgroundColor3 = C.NestedCard
-    CtrlCard.Parent = TimeScroll
-    UI.applyCard(CtrlCard, R.RXL, C.NestedCard, C.BorderInner)
-
-    local CcT = Instance.new("TextLabel")
-    CcT.Size = UDim2.new(1, -20, 0, 20)
-    CcT.Position = UDim2.new(0, 14, 0, 8)
-    CcT.BackgroundTransparency = 1
-    CcT.Text = "Session Controls"
-    CcT.TextColor3 = C.TextPrimary
-    CcT.TextSize = T.Header
-    CcT.Font = Enum.Font.GothamBold
-    CcT.TextXAlignment = Enum.TextXAlignment.Left
-    CcT.Parent = CtrlCard
-
-    local ResetT = Instance.new("TextButton")
-    ResetT.Size = UDim2.new(0.5, -18, 0, 30)
-    ResetT.Position = UDim2.new(0, 10, 0, 36)
-    ResetT.BackgroundColor3 = C.Recessed
-    ResetT.Text = "🔄 Reset Session Timer"
-    ResetT.TextColor3 = C.AccentGreen
-    ResetT.TextSize = T.Caption
-    ResetT.Font = Enum.Font.GothamBold
-    ResetT.Parent = CtrlCard
-    UI.styleButton(ResetT, R.RMD, C.Recessed)
-
-    local ResetC = Instance.new("TextButton")
-    ResetC.Size = UDim2.new(0.5, -18, 0, 30)
-    ResetC.Position = UDim2.new(0.5, 8, 0, 36)
-    ResetC.BackgroundColor3 = C.Recessed
-    ResetC.Text = "🧹 Reset Egg Counters"
-    ResetC.TextColor3 = C.AccentRed
-    ResetC.TextSize = T.Caption
-    ResetC.Font = Enum.Font.GothamBold
-    ResetC.Parent = CtrlCard
-    UI.styleButton(ResetC, R.RMD, C.Recessed)
-
-    local function refreshTime()
-        local now = os.time()
-        local el = now - State.sessionStartTime
-        local h = math.floor(el / 3600)
-        local m = math.floor((el % 3600) / 60)
-        local s = el % 60
-        tmCur.Text = os.date("%H:%M:%S")
-        tmUp.Text  = string.format("%02d:%02d:%02d", h, m, s)
-        tmEpm.Text = (el > 0)
-            and string.format("%.1f eggs/min", State.totalEggsCollected / (el/60))
-            or "0.0 eggs/min"
-        BigClock.Text = os.date("%H:%M:%S")
-        BigDate.Text  = os.date("%A, %B %d, %Y")
-        TotalCnt.Text = tostring(State.totalEggsCollected)
-        local rare = 0
-        for _, rec in ipairs(State.farmHistory) do
-            if rec.isRare then rare += 1 end
-        end
-        TotalCap.Text = rare.." rare collected"
-        ClockLabel.Text = os.date("%H:%M:%S")
-    end
-    refreshTime()
-
-    ResetT.MouseButton1Click:Connect(function()
-        State.sessionStartTime = os.time()
-        tmSt.Text = os.date("%H:%M:%S", State.sessionStartTime)
-        refreshTime()
-        Bus.emit("status", "Session reset", C.AccentGreen)
-    end)
-    ResetC.MouseButton1Click:Connect(function()
-        State.totalEggsCollected = 0
-        refreshTime()
-        Bus.emit("status", "Counters reset", C.AccentRed)
-    end)
-
-    --====================================
-    -- [History tab]
-    --====================================
-    local HistPanel = tabPanels["History"]
-    local HistBar = Instance.new("Frame")
-    HistBar.Size = UDim2.new(1, 0, 0, 46)
-    HistBar.BackgroundColor3 = C.NestedCard
-    HistBar.Parent = HistPanel
-    UI.applyCard(HistBar, R.RXL, C.NestedCard, C.BorderInner)
-
-    local HistT = Instance.new("TextLabel")
-    HistT.Size = UDim2.new(1, -100, 1, 0)
-    HistT.Position = UDim2.new(0, 14, 0, 0)
-    HistT.BackgroundTransparency = 1
-    HistT.Text = "📜  Egg Farm Collection Timeline"
-    HistT.TextColor3 = C.AccentGold
-    HistT.TextSize = T.Header
-    HistT.Font = Enum.Font.GothamBold
-    HistT.TextXAlignment = Enum.TextXAlignment.Left
-    HistT.Parent = HistBar
-
-    local ClearHist = Instance.new("TextButton")
-    ClearHist.Size = UDim2.new(0, 76, 0, 28)
-    ClearHist.Position = UDim2.new(1, -86, 0.5, -14)
-    ClearHist.BackgroundColor3 = C.Recessed
-    ClearHist.Text = "Clear All"
-    ClearHist.TextColor3 = C.AccentRed
-    ClearHist.TextSize = T.Caption
-    ClearHist.Font = Enum.Font.GothamBold
-    ClearHist.Parent = HistBar
-    UI.styleButton(ClearHist, R.RMD, C.Recessed)
-
-    local HistCard = Instance.new("Frame")
-    HistCard.Size = UDim2.new(1, 0, 1, -54)
-    HistCard.Position = UDim2.new(0, 0, 0, 54)
-    HistCard.BackgroundColor3 = C.NestedCard
-    HistCard.Parent = HistPanel
-    UI.applyCard(HistCard, R.RXL, C.NestedCard, C.BorderInner)
-
-    local HistScroll = Instance.new("ScrollingFrame")
-    HistScroll.Size = UDim2.new(1, -16, 1, -16)
-    HistScroll.Position = UDim2.new(0, 8, 0, 8)
-    HistScroll.BackgroundTransparency = 1
-    HistScroll.BorderSizePixel = 0
-    HistScroll.ScrollBarThickness = 3
-    HistScroll.ScrollBarImageColor3 = Color3.fromRGB(60,60,60)
-    HistScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    HistScroll.Parent = HistCard
-    local HL = Instance.new("UIListLayout")
-    HL.SortOrder = Enum.SortOrder.LayoutOrder
-    HL.Padding = UDim.new(0, 4)
-    HL.Parent = HistScroll
-    HL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        HistScroll.CanvasSize = UDim2.new(0, 0, 0, HL.AbsoluteContentSize.Y + 6)
-    end)
-
-    local function refreshHistory()
-        for _, child in ipairs(HistScroll:GetChildren()) do
-            if child ~= HL then child:Destroy() end
-        end
-        if #State.farmHistory == 0 then
-            local el = Instance.new("TextLabel")
-            el.Size = UDim2.new(1, 0, 0, 40)
-            el.BackgroundTransparency = 1
-            el.Text = "No farm history recorded yet\nยังไม่มีประวัติการเก็บไข่"
-            el.TextColor3 = C.TextMuted
-            el.TextSize = T.Body
-            el.Font = Enum.Font.GothamMedium
-            el.Parent = HistScroll
+        if #filteredItems == 0 then
+            local emptyLabel = Instance.new("TextLabel")
+            emptyLabel.Size = UDim2.new(1, 0, 0, 40)
+            emptyLabel.BackgroundTransparency = 1
+            emptyLabel.Text = (#allItems == 0) and "Backpack is empty / ไม่มีไอเทม" or "No matching items"
+            emptyLabel.TextColor3 = AppConfig.TextMuted
+            emptyLabel.TextSize = AppConfig.TextBody
+            emptyLabel.Font = Enum.Font.GothamMedium
+            emptyLabel.Parent = BackpackScroll
             return
         end
-        for _, item in ipairs(State.farmHistory) do
+
+        for _, item in ipairs(filteredItems) do
             local card = Instance.new("Frame")
-            card.Size = UDim2.new(1, -4, 0, 34)
-            card.BackgroundColor3 = item.isRare
-                and Color3.fromRGB(36,30,20) or C.Recessed
-            card.Parent = HistScroll
-            UI.applyCard(card, R.RMD, card.BackgroundColor3,
-                item.isRare and C.AccentGold or C.BorderInner)
-            local ico = Instance.new("ImageLabel")
-            ico.Size = UDim2.new(0, 20, 0, 20)
-            ico.Position = UDim2.new(0, 8, 0.5, -10)
-            ico.BackgroundTransparency = 1
-            ico.Image = Util.getEggImage(item.name)
-            ico.ScaleType = Enum.ScaleType.Fit
-            ico.Parent = card
-            local n = Instance.new("TextLabel")
-            n.Size = UDim2.new(1, -120, 1, 0)
-            n.Position = UDim2.new(0, 34, 0, 0)
-            n.BackgroundTransparency = 1
-            n.Text = item.name
-            n.TextColor3 = item.isRare and C.AccentGold or C.TextPrimary
-            n.TextSize = T.Body
-            n.Font = Enum.Font.GothamBold
-            n.TextXAlignment = Enum.TextXAlignment.Left
-            n.TextTruncate = Enum.TextTruncate.AtEnd
-            n.Parent = card
-            local tl = Instance.new("TextLabel")
-            tl.Size = UDim2.new(0, 72, 1, 0)
-            tl.Position = UDim2.new(1, -80, 0, 0)
-            tl.BackgroundTransparency = 1
-            tl.Text = item.time
-            tl.TextColor3 = C.TextMuted
-            tl.TextSize = T.Caption
-            tl.Font = Enum.Font.Gotham
-            tl.TextXAlignment = Enum.TextXAlignment.Right
-            tl.Parent = card
+            card.Size = UDim2.new(1, -4, 0, 36)
+            card.BackgroundColor3 = item.isEquipped and Color3.fromRGB(22, 34, 28) or AppConfig.RecessedBg
+            card.Parent = BackpackScroll
+            UIComponent.applyCard(card, AppConfig.RadiusMD, card.BackgroundColor3, item.isEquipped and AppConfig.AccentGreen or AppConfig.BorderInner)
+
+            if item.textureId and #item.textureId > 0 then
+                local icon = Instance.new("ImageLabel")
+                icon.Size = UDim2.new(0, 22, 0, 22)
+                icon.Position = UDim2.new(0, 8, 0.5, -11)
+                icon.BackgroundTransparency = 1
+                icon.Image = item.textureId
+                icon.ScaleType = Enum.ScaleType.Fit
+                icon.Parent = card
+            else
+                local iconFallback = Instance.new("TextLabel")
+                iconFallback.Size = UDim2.new(0, 22, 0, 22)
+                iconFallback.Position = UDim2.new(0, 8, 0.5, -11)
+                iconFallback.BackgroundTransparency = 1
+                iconFallback.Text = item.isEquipped and "⚔️" or "📦"
+                iconFallback.TextSize = 12
+                iconFallback.Font = Enum.Font.GothamBold
+                iconFallback.Parent = card
+            end
+
+            local nameLabel = Instance.new("TextLabel")
+            nameLabel.Size = UDim2.new(1, -160, 1, 0)
+            nameLabel.Position = UDim2.new(0, 36, 0, 0)
+            nameLabel.BackgroundTransparency = 1
+            nameLabel.Text = item.name
+            nameLabel.TextColor3 = item.isEquipped and AppConfig.AccentGreen or AppConfig.TextPrimary
+            nameLabel.TextSize = AppConfig.TextBody
+            nameLabel.Font = Enum.Font.GothamBold
+            nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+            nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+            nameLabel.Parent = card
+
+            local tagLabel = Instance.new("TextLabel")
+            tagLabel.Size = UDim2.new(0, 56, 0, 20)
+            tagLabel.Position = UDim2.new(1, -124, 0.5, -10)
+            tagLabel.BackgroundColor3 = item.isEquipped and Color3.fromRGB(20, 48, 30) or AppConfig.NestedCardBg
+            tagLabel.Text = item.isEquipped and "Equipped" or "In Bag"
+            tagLabel.TextColor3 = item.isEquipped and AppConfig.AccentGreen or AppConfig.TextMuted
+            tagLabel.TextSize = AppConfig.TextMicro
+            tagLabel.Font = Enum.Font.GothamMedium
+            tagLabel.Parent = card
+
+            local tc = Instance.new("UICorner")
+            tc.CornerRadius = UDim.new(0, 4)
+            tc.Parent = tagLabel
+
+            local actBtn = Instance.new("TextButton")
+            actBtn.Size = UDim2.new(0, 60, 0, 24)
+            actBtn.Position = UDim2.new(1, -64, 0.5, -12)
+            local actBg = item.isEquipped and AppConfig.NestedCardBg or AppConfig.AccentGreen
+            actBtn.BackgroundColor3 = actBg
+            actBtn.Text = item.isEquipped and "Unequip" or "Equip"
+            actBtn.TextColor3 = item.isEquipped and AppConfig.TextSecondary or Color3.fromRGB(10, 20, 15)
+            actBtn.TextSize = AppConfig.TextCaption
+            actBtn.Font = Enum.Font.GothamBold
+            actBtn.Parent = card
+            UIComponent.styleButton(actBtn, AppConfig.RadiusSM, actBg)
+
+            actBtn.MouseButton1Click:Connect(function()
+                if item.isEquipped then Utils.unequipTool(item.instance)
+                else Utils.equipTool(item.instance) end
+                task.wait(0.08)
+                updateBackpackUI()
+            end)
         end
     end
 
-    ClearHist.MouseButton1Click:Connect(function()
-        table.clear(State.farmHistory)
-        refreshHistory()
-        Bus.emit("status", "History cleared", C.AccentRed)
+    BackpackSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local newQuery = BackpackSearchBox.Text:match("^%s*(.-)%s*$") or ""
+        BpClearSearchBtn.Visible = (#newQuery > 0)
+        if newQuery == StateStore.backpackSearchQuery then return end
+        StateStore.backpackSearchQuery = newQuery
+        updateBackpackUI()
     end)
-    Bus.on("history-changed", refreshHistory)
 
-    --====================================
-    -- [Settings tab]
-    --====================================
+    BpClearSearchBtn.MouseButton1Click:Connect(function()
+        BackpackSearchBox.Text = ""
+        StateStore.backpackSearchQuery = ""
+        BpClearSearchBtn.Visible = false
+        updateBackpackUI()
+    end)
+
+    PrintBackpackBtn.MouseButton1Click:Connect(function()
+        Utils.printBackpack()
+        updateStatus("Backpack dumped to console", AppConfig.AccentBlue)
+    end)
+
+    local backpackConnAdded, backpackConnRemoved
+    local charConnAdded, charConnRemoved
+
+    local function bindBackpackListeners()
+        if backpackConnAdded then backpackConnAdded:Disconnect() end
+        if backpackConnRemoved then backpackConnRemoved:Disconnect() end
+        local bp = Utils.getBackpack()
+        if bp then
+            backpackConnAdded = StateStore.track(bp.ChildAdded:Connect(function()
+                if currentActiveTab == "Backpack" then updateBackpackUI() end
+            end))
+            backpackConnRemoved = StateStore.track(bp.ChildRemoved:Connect(function()
+                if currentActiveTab == "Backpack" then updateBackpackUI() end
+            end))
+        end
+    end
+
+    local function bindCharBackpackListeners(char)
+        if charConnAdded then charConnAdded:Disconnect() end
+        if charConnRemoved then charConnRemoved:Disconnect() end
+        if char then
+            charConnAdded = StateStore.track(char.ChildAdded:Connect(function(child)
+                if child:IsA("Tool") and currentActiveTab == "Backpack" then updateBackpackUI() end
+            end))
+            charConnRemoved = StateStore.track(char.ChildRemoved:Connect(function(child)
+                if child:IsA("Tool") and currentActiveTab == "Backpack" then updateBackpackUI() end
+            end))
+        end
+        bindBackpackListeners()
+    end
+
+    bindCharBackpackListeners(Utils.getCharacter())
+    StateStore.track(ServiceManager.LocalPlayer.CharacterAdded:Connect(bindCharBackpackListeners))
+
+    -- [TAB 4] HISTORY
+    local HistoryPanel = tabPanels["History"]
+
+    local HistToolbarCard = Instance.new("Frame")
+    HistToolbarCard.Size = UDim2.new(1, 0, 0, 46)
+    HistToolbarCard.BackgroundColor3 = AppConfig.NestedCardBg
+    HistToolbarCard.Parent = HistoryPanel
+    UIComponent.applyCard(HistToolbarCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+    local HistTitle = Instance.new("TextLabel")
+    HistTitle.Size = UDim2.new(1, -100, 1, 0)
+    HistTitle.Position = UDim2.new(0, 14, 0, 0)
+    HistTitle.BackgroundTransparency = 1
+    HistTitle.Text = "📜  Egg Farm Collection Timeline"
+    HistTitle.TextColor3 = AppConfig.AccentGold
+    HistTitle.TextSize = AppConfig.TextHeader
+    HistTitle.Font = Enum.Font.GothamBold
+    HistTitle.TextXAlignment = Enum.TextXAlignment.Left
+    HistTitle.Parent = HistToolbarCard
+
+    local ClearHistoryBtn = Instance.new("TextButton")
+    ClearHistoryBtn.Size = UDim2.new(0, 76, 0, 28)
+    ClearHistoryBtn.Position = UDim2.new(1, -86, 0.5, -14)
+    ClearHistoryBtn.BackgroundColor3 = AppConfig.RecessedBg
+    ClearHistoryBtn.Text = "Clear All"
+    ClearHistoryBtn.TextColor3 = AppConfig.AccentRed
+    ClearHistoryBtn.TextSize = AppConfig.TextCaption
+    ClearHistoryBtn.Font = Enum.Font.GothamBold
+    ClearHistoryBtn.Parent = HistToolbarCard
+    UIComponent.styleButton(ClearHistoryBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
+
+    local HistListCard = Instance.new("Frame")
+    HistListCard.Size = UDim2.new(1, 0, 1, -54)
+    HistListCard.Position = UDim2.new(0, 0, 0, 54)
+    HistListCard.BackgroundColor3 = AppConfig.NestedCardBg
+    HistListCard.Parent = HistoryPanel
+    UIComponent.applyCard(HistListCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+    local HistoryScroll = Instance.new("ScrollingFrame")
+    HistoryScroll.Size = UDim2.new(1, -16, 1, -16)
+    HistoryScroll.Position = UDim2.new(0, 8, 0, 8)
+    HistoryScroll.BackgroundTransparency = 1
+    HistoryScroll.BorderSizePixel = 0
+    HistoryScroll.ScrollBarThickness = 3
+    HistoryScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
+    HistoryScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    HistoryScroll.Parent = HistListCard
+
+    local HistoryLayout = Instance.new("UIListLayout")
+    HistoryLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    HistoryLayout.Padding = UDim.new(0, 4)
+    HistoryLayout.Parent = HistoryScroll
+
+    HistoryLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        HistoryScroll.CanvasSize = UDim2.new(0, 0, 0, HistoryLayout.AbsoluteContentSize.Y + 6)
+    end)
+
+    updateHistoryUI = function()
+        for _, child in ipairs(HistoryScroll:GetChildren()) do
+            if child ~= HistoryLayout then child:Destroy() end
+        end
+
+        if #StateStore.farmHistory == 0 then
+            local emptyLabel = Instance.new("TextLabel")
+            emptyLabel.Size = UDim2.new(1, 0, 0, 40)
+            emptyLabel.BackgroundTransparency = 1
+            emptyLabel.Text = "No farm history recorded yet\nยังไม่มีประวัติการเก็บไข่"
+            emptyLabel.TextColor3 = AppConfig.TextMuted
+            emptyLabel.TextSize = AppConfig.TextBody
+            emptyLabel.Font = Enum.Font.GothamMedium
+            emptyLabel.Parent = HistoryScroll
+            return
+        end
+
+        for _, item in ipairs(StateStore.farmHistory) do
+            local card = Instance.new("Frame")
+            card.Size = UDim2.new(1, -4, 0, 34)
+            card.BackgroundColor3 = item.isRare and Color3.fromRGB(36, 30, 20) or AppConfig.RecessedBg
+            card.Parent = HistoryScroll
+            UIComponent.applyCard(card, AppConfig.RadiusMD, card.BackgroundColor3, item.isRare and AppConfig.AccentGold or AppConfig.BorderInner)
+
+            local icon = Instance.new("ImageLabel")
+            icon.Size = UDim2.new(0, 20, 0, 20)
+            icon.Position = UDim2.new(0, 8, 0.5, -10)
+            icon.BackgroundTransparency = 1
+            icon.Image = Utils.getEggImage(item.name)
+            icon.ScaleType = Enum.ScaleType.Fit
+            icon.Parent = card
+
+            local nameLabel = Instance.new("TextLabel")
+            nameLabel.Size = UDim2.new(1, -120, 1, 0)
+            nameLabel.Position = UDim2.new(0, 34, 0, 0)
+            nameLabel.BackgroundTransparency = 1
+            nameLabel.Text = item.name
+            nameLabel.TextColor3 = item.isRare and AppConfig.AccentGold or AppConfig.TextPrimary
+            nameLabel.TextSize = AppConfig.TextBody
+            nameLabel.Font = Enum.Font.GothamBold
+            nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+            nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+            nameLabel.Parent = card
+
+            local timeLabel = Instance.new("TextLabel")
+            timeLabel.Size = UDim2.new(0, 72, 1, 0)
+            timeLabel.Position = UDim2.new(1, -80, 0, 0)
+            timeLabel.BackgroundTransparency = 1
+            timeLabel.Text = item.time
+            timeLabel.TextColor3 = AppConfig.TextMuted
+            timeLabel.TextSize = AppConfig.TextCaption
+            timeLabel.Font = Enum.Font.Gotham
+            timeLabel.TextXAlignment = Enum.TextXAlignment.Right
+            timeLabel.Parent = card
+        end
+    end
+
+    StateStore.onHistoryUpdated = updateHistoryUI
+
+    ClearHistoryBtn.MouseButton1Click:Connect(function()
+        table.clear(StateStore.farmHistory)
+        updateHistoryUI()
+        updateStatus("Farm history cleared", AppConfig.AccentRed)
+    end)
+
+    -- [TAB 5] SETTINGS
     local SettingsPanel = tabPanels["Settings"]
+
     local SettingsScroll = Instance.new("ScrollingFrame")
     SettingsScroll.Size = UDim2.new(1, 0, 1, 0)
     SettingsScroll.BackgroundTransparency = 1
     SettingsScroll.BorderSizePixel = 0
     SettingsScroll.ScrollBarThickness = 3
-    SettingsScroll.ScrollBarImageColor3 = Color3.fromRGB(60,60,60)
+    SettingsScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
     SettingsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
     SettingsScroll.Parent = SettingsPanel
-    local SL = Instance.new("UIListLayout")
-    SL.SortOrder = Enum.SortOrder.LayoutOrder
-    SL.Padding = UDim.new(0, 8)
-    SL.Parent = SettingsScroll
-    SL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        SettingsScroll.CanvasSize = UDim2.new(0, 0, 0, SL.AbsoluteContentSize.Y + 8)
+
+    local SettingsLayout = Instance.new("UIListLayout")
+    SettingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    SettingsLayout.Padding = UDim.new(0, 8)
+    SettingsLayout.Parent = SettingsScroll
+
+    SettingsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        SettingsScroll.CanvasSize = UDim2.new(0, 0, 0, SettingsLayout.AbsoluteContentSize.Y + 8)
     end)
 
-    -- Geometry card
-    local GeomCard = Instance.new("Frame")
-    GeomCard.Size = UDim2.new(1, -4, 0, 76)
-    GeomCard.LayoutOrder = 1
-    GeomCard.BackgroundColor3 = C.NestedCard
-    GeomCard.Parent = SettingsScroll
-    UI.applyCard(GeomCard, R.RXL, C.NestedCard, C.BorderInner)
+    local DevSetCard = Instance.new("Frame")
+    DevSetCard.Size = UDim2.new(1, -4, 0, 76)
+    DevSetCard.LayoutOrder = 1
+    DevSetCard.BackgroundColor3 = AppConfig.NestedCardBg
+    DevSetCard.Parent = SettingsScroll
+    UIComponent.applyCard(DevSetCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
-    local GcT = Instance.new("TextLabel")
-    GcT.Size = UDim2.new(1, -20, 0, 20)
-    GcT.Position = UDim2.new(0, 14, 0, 8)
-    GcT.BackgroundTransparency = 1
-    GcT.Text = "Display & Screen Geometry Mode"
-    GcT.TextColor3 = C.TextPrimary
-    GcT.TextSize = T.Header
-    GcT.Font = Enum.Font.GothamBold
-    GcT.TextXAlignment = Enum.TextXAlignment.Left
-    GcT.Parent = GeomCard
+    local DstTitle = Instance.new("TextLabel")
+    DstTitle.Size = UDim2.new(1, -20, 0, 20)
+    DstTitle.Position = UDim2.new(0, 14, 0, 8)
+    DstTitle.BackgroundTransparency = 1
+    DstTitle.Text = "Display & Screen Geometry Mode"
+    DstTitle.TextColor3 = AppConfig.TextPrimary
+    DstTitle.TextSize = AppConfig.TextHeader
+    DstTitle.Font = Enum.Font.GothamBold
+    DstTitle.TextXAlignment = Enum.TextXAlignment.Left
+    DstTitle.Parent = DevSetCard
 
-    local SetPC = Instance.new("TextButton")
-    SetPC.Size = UDim2.new(0.5, -18, 0, 30)
-    SetPC.Position = UDim2.new(0, 10, 0, 36)
-    SetPC.BackgroundColor3 = C.Recessed
-    SetPC.Text = "💻 PC Layout (760x480)"
-    SetPC.TextColor3 = C.TextPrimary
-    SetPC.TextSize = T.Caption
-    SetPC.Font = Enum.Font.GothamBold
-    SetPC.Parent = GeomCard
-    UI.styleButton(SetPC, R.RMD, C.Recessed)
+    local SetPCBtn = Instance.new("TextButton")
+    SetPCBtn.Size = UDim2.new(0.5, -18, 0, 30)
+    SetPCBtn.Position = UDim2.new(0, 10, 0, 36)
+    SetPCBtn.BackgroundColor3 = AppConfig.RecessedBg
+    SetPCBtn.Text = "💻 PC Layout (760x480)"
+    SetPCBtn.TextColor3 = AppConfig.TextPrimary
+    SetPCBtn.TextSize = AppConfig.TextCaption
+    SetPCBtn.Font = Enum.Font.GothamBold
+    SetPCBtn.Parent = DevSetCard
+    UIComponent.styleButton(SetPCBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
 
-    local SetMob = Instance.new("TextButton")
-    SetMob.Size = UDim2.new(0.5, -18, 0, 30)
-    SetMob.Position = UDim2.new(0.5, 8, 0, 36)
-    SetMob.BackgroundColor3 = C.Recessed
-    SetMob.Text = "📱 Mobile Layout (620x400)"
-    SetMob.TextColor3 = C.TextPrimary
-    SetMob.TextSize = T.Caption
-    SetMob.Font = Enum.Font.GothamBold
-    SetMob.Parent = GeomCard
-    UI.styleButton(SetMob, R.RMD, C.Recessed)
+    local SetMobileBtn = Instance.new("TextButton")
+    SetMobileBtn.Size = UDim2.new(0.5, -18, 0, 30)
+    SetMobileBtn.Position = UDim2.new(0.5, 8, 0, 36)
+    SetMobileBtn.BackgroundColor3 = AppConfig.RecessedBg
+    SetMobileBtn.Text = "📱 Mobile Layout (620x400)"
+    SetMobileBtn.TextColor3 = AppConfig.TextPrimary
+    SetMobileBtn.TextSize = AppConfig.TextCaption
+    SetMobileBtn.Font = Enum.Font.GothamBold
+    SetMobileBtn.Parent = DevSetCard
+    UIComponent.styleButton(SetMobileBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
 
-    -- Keybind card
-    local KeyCard = Instance.new("Frame")
-    KeyCard.Size = UDim2.new(1, -4, 0, 76)
-    KeyCard.LayoutOrder = 2
-    KeyCard.BackgroundColor3 = C.NestedCard
-    KeyCard.Parent = SettingsScroll
-    UI.applyCard(KeyCard, R.RXL, C.NestedCard, C.BorderInner)
+    local KeybindCard = Instance.new("Frame")
+    KeybindCard.Size = UDim2.new(1, -4, 0, 76)
+    KeybindCard.LayoutOrder = 2
+    KeybindCard.BackgroundColor3 = AppConfig.NestedCardBg
+    KeybindCard.Parent = SettingsScroll
+    UIComponent.applyCard(KeybindCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
-    local KcT = Instance.new("TextLabel")
-    KcT.Size = UDim2.new(1, -20, 0, 20)
-    KcT.Position = UDim2.new(0, 14, 0, 8)
-    KcT.BackgroundTransparency = 1
-    KcT.Text = "Teleport Home & Deposit Keybind"
-    KcT.TextColor3 = C.TextPrimary
-    KcT.TextSize = T.Header
-    KcT.Font = Enum.Font.GothamBold
-    KcT.TextXAlignment = Enum.TextXAlignment.Left
-    KcT.Parent = KeyCard
+    local KbTitle = Instance.new("TextLabel")
+    KbTitle.Size = UDim2.new(1, -20, 0, 20)
+    KbTitle.Position = UDim2.new(0, 14, 0, 8)
+    KbTitle.BackgroundTransparency = 1
+    KbTitle.Text = "Teleport Home & Deposit Keybind"
+    KbTitle.TextColor3 = AppConfig.TextPrimary
+    KbTitle.TextSize = AppConfig.TextHeader
+    KbTitle.Font = Enum.Font.GothamBold
+    KbTitle.TextXAlignment = Enum.TextXAlignment.Left
+    KbTitle.Parent = KeybindCard
 
-    local KeyBtn = Instance.new("TextButton")
-    KeyBtn.Size = UDim2.new(1, -20, 0, 30)
-    KeyBtn.Position = UDim2.new(0, 10, 0, 36)
-    KeyBtn.BackgroundColor3 = C.Recessed
-    KeyBtn.Text = "⌨️  Current: ["..State.tpKeybind.Name.."] (Click to remap)"
-    KeyBtn.TextColor3 = C.AccentGold
-    KeyBtn.TextSize = T.Caption
-    KeyBtn.Font = Enum.Font.GothamBold
-    KeyBtn.Parent = KeyCard
-    UI.styleButton(KeyBtn, R.RMD, C.Recessed)
+    local KeybindBtn = Instance.new("TextButton")
+    KeybindBtn.Size = UDim2.new(1, -20, 0, 30)
+    KeybindBtn.Position = UDim2.new(0, 10, 0, 36)
+    KeybindBtn.BackgroundColor3 = AppConfig.RecessedBg
+    KeybindBtn.Text = "⌨️  Current Keybind: [" .. StateStore.tpKeybind.Name .. "] (Click to remap)"
+    KeybindBtn.TextColor3 = AppConfig.AccentGold
+    KeybindBtn.TextSize = AppConfig.TextCaption
+    KeybindBtn.Font = Enum.Font.GothamBold
+    KeybindBtn.Parent = KeybindCard
+    UIComponent.styleButton(KeybindBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
 
-    KeyBtn.MouseButton1Click:Connect(function()
-        State.listeningForKey = true
-        KeyBtn.Text = "⌨️  Press any keyboard key..."
-        KeyBtn.TextColor3 = C.AccentGreen
+    KeybindBtn.MouseButton1Click:Connect(function()
+        StateStore.listeningForKey = true
+        KeybindBtn.Text = "⌨️  Press any keyboard key now..."
+        KeybindBtn.TextColor3 = AppConfig.AccentGreen
     end)
 
-    -- Plot diagnostic card
-    local DiagCard = Instance.new("Frame")
-    DiagCard.Size = UDim2.new(1, -4, 0, 76)
-    DiagCard.LayoutOrder = 3
-    DiagCard.BackgroundColor3 = C.NestedCard
-    DiagCard.Parent = SettingsScroll
-    UI.applyCard(DiagCard, R.RXL, C.NestedCard, C.BorderInner)
+    -- Auto-Rerun on Disconnect card
+    local ReconnectCard = Instance.new("Frame")
+    ReconnectCard.Size = UDim2.new(1, -4, 0, 76)
+    ReconnectCard.LayoutOrder = 2.5
+    ReconnectCard.BackgroundColor3 = AppConfig.NestedCardBg
+    ReconnectCard.Parent = SettingsScroll
+    UIComponent.applyCard(ReconnectCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
-    local DgT = Instance.new("TextLabel")
-    DgT.Size = UDim2.new(1, -20, 0, 20)
-    DgT.Position = UDim2.new(0, 14, 0, 8)
-    DgT.BackgroundTransparency = 1
-    DgT.Text = "Home Plot Detection Diagnostic"
-    DgT.TextColor3 = C.TextPrimary
-    DgT.TextSize = T.Header
-    DgT.Font = Enum.Font.GothamBold
-    DgT.TextXAlignment = Enum.TextXAlignment.Left
-    DgT.Parent = DiagCard
+    local RcTitle = Instance.new("TextLabel")
+    RcTitle.Size = UDim2.new(1, -20, 0, 20)
+    RcTitle.Position = UDim2.new(0, 14, 0, 8)
+    RcTitle.BackgroundTransparency = 1
+    RcTitle.Text = "🔁 Auto Rerun on Disconnect"
+    RcTitle.TextColor3 = AppConfig.TextPrimary
+    RcTitle.TextSize = AppConfig.TextHeader
+    RcTitle.Font = Enum.Font.GothamBold
+    RcTitle.TextXAlignment = Enum.TextXAlignment.Left
+    RcTitle.Parent = ReconnectCard
 
-    local DiagBtn = Instance.new("TextButton")
-    DiagBtn.Size = UDim2.new(1, -20, 0, 30)
-    DiagBtn.Position = UDim2.new(0, 10, 0, 36)
-    DiagBtn.BackgroundColor3 = C.Recessed
-    DiagBtn.Text = "🔍 Check Home Plot Link"
-    DiagBtn.TextColor3 = C.TextPrimary
-    DiagBtn.TextSize = T.Caption
-    DiagBtn.Font = Enum.Font.GothamBold
-    DiagBtn.Parent = DiagCard
-    UI.styleButton(DiagBtn, R.RMD, C.Recessed)
+    local RcDesc = Instance.new("TextLabel")
+    RcDesc.Size = UDim2.new(1, -20, 0, 16)
+    RcDesc.Position = UDim2.new(0, 14, 0, 28)
+    RcDesc.BackgroundTransparency = 1
+    RcDesc.Text = "Re-executes script + rejoins when disconnected"
+    RcDesc.TextColor3 = AppConfig.TextMuted
+    RcDesc.TextSize = AppConfig.TextMicro
+    RcDesc.Font = Enum.Font.GothamMedium
+    RcDesc.TextXAlignment = Enum.TextXAlignment.Left
+    RcDesc.Parent = ReconnectCard
 
-    DiagBtn.MouseButton1Click:Connect(function()
-        local plot = Plot.findHome()
-        if plot then
-            Bus.emit("status", "Plot: "..plot.Name, C.AccentGreen)
-            DiagBtn.Text = "✅ Linked: "..plot.Name
+    local AutoRerunBtn = Instance.new("TextButton")
+    AutoRerunBtn.Size = UDim2.new(1, -20, 0, 28)
+    AutoRerunBtn.Position = UDim2.new(0, 10, 0, 44)
+    AutoRerunBtn.BackgroundColor3 = AppConfig.AccentGreen
+    AutoRerunBtn.Text = "🟢 Auto Rerun: ON — Click to Toggle"
+    AutoRerunBtn.TextColor3 = Color3.fromRGB(10, 20, 15)
+    AutoRerunBtn.TextSize = AppConfig.TextCaption
+    AutoRerunBtn.Font = Enum.Font.GothamBold
+    AutoRerunBtn.Parent = ReconnectCard
+    UIComponent.styleButton(AutoRerunBtn, AppConfig.RadiusMD, AppConfig.AccentGreen)
+
+    AutoRerunBtn.MouseButton1Click:Connect(function()
+        AppConfig.AutoRerunOnDisconnect = not AppConfig.AutoRerunOnDisconnect
+        if AppConfig.AutoRerunOnDisconnect then
+            UIComponent.setButtonDefault(AutoRerunBtn, AppConfig.AccentGreen)
+            AutoRerunBtn.Text = "🟢 Auto Rerun: ON — Click to Toggle"
+            AutoRerunBtn.TextColor3 = Color3.fromRGB(10, 20, 15)
+            ReconnectComponent.start()
+            updateStatus("Auto Rerun: ON", AppConfig.AccentGreen)
         else
-            Bus.emit("status", "No Home Plot", C.AccentRed)
-            DiagBtn.Text = "❌ No Home Plot"
+            UIComponent.setButtonDefault(AutoRerunBtn, AppConfig.RecessedBg)
+            AutoRerunBtn.Text = "🔴 Auto Rerun: OFF — Click to Toggle"
+            AutoRerunBtn.TextColor3 = AppConfig.TextSecondary
+            ReconnectComponent.stop()
+            updateStatus("Auto Rerun: OFF", AppConfig.TextSecondary)
         end
     end)
 
-    --====================================
-    -- Rare alert rendering
-    --====================================
-    Bus.on("rare-egg", function(egg)
-        if not egg or not egg.Parent then return end
-        local now = os.clock()
-        local last = State.recentAlerts[egg.Name]
-        if last and (now - last) < Config.Alerts.DedupeSeconds then return end
-        State.recentAlerts[egg.Name] = now
+    -- Discord Webhook Settings Card
+    local DiscordCard = Instance.new("Frame")
+    DiscordCard.Size = UDim2.new(1, -4, 0, 232)
+    DiscordCard.LayoutOrder = 2.6
+    DiscordCard.BackgroundColor3 = AppConfig.NestedCardBg
+    DiscordCard.Parent = SettingsScroll
+    UIComponent.applyCard(DiscordCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.AccentDiscord, 0.45)
 
-        local existing = {}
-        for _, child in ipairs(AlertStack:GetChildren()) do
-            if child:IsA("Frame") then table.insert(existing, child) end
+    local DcTitle = Instance.new("TextLabel")
+    DcTitle.Size = UDim2.new(1, -20, 0, 20)
+    DcTitle.Position = UDim2.new(0, 14, 0, 8)
+    DcTitle.BackgroundTransparency = 1
+    DcTitle.Text = "💬 Discord Webhook (Eggs ESP Pro Style)"
+    DcTitle.TextColor3 = AppConfig.AccentDiscord
+    DcTitle.TextSize = AppConfig.TextHeader
+    DcTitle.Font = Enum.Font.GothamBold
+    DcTitle.TextXAlignment = Enum.TextXAlignment.Left
+    DcTitle.Parent = DiscordCard
+
+    local DcDesc = Instance.new("TextLabel")
+    DcDesc.Size = UDim2.new(1, -20, 0, 16)
+    DcDesc.Position = UDim2.new(0, 14, 0, 26)
+    DcDesc.BackgroundTransparency = 1
+    DcDesc.Text = "Paste your webhook URL. Toggle to enable notifications."
+    DcDesc.TextColor3 = AppConfig.TextMuted
+    DcDesc.TextSize = AppConfig.TextMicro
+    DcDesc.Font = Enum.Font.GothamMedium
+    DcDesc.TextXAlignment = Enum.TextXAlignment.Left
+    DcDesc.Parent = DiscordCard
+
+    local UrlBox = Instance.new("TextBox")
+    UrlBox.Size = UDim2.new(1, -20, 0, 30)
+    UrlBox.Position = UDim2.new(0, 10, 0, 50)
+    UrlBox.BackgroundColor3 = AppConfig.RecessedBg
+    UrlBox.BorderSizePixel = 0
+    UrlBox.PlaceholderText = "https://discord.com/api/webhooks/..."
+    UrlBox.PlaceholderColor3 = AppConfig.TextMuted
+    UrlBox.Text = AppConfig.DiscordWebhookURL
+    UrlBox.TextColor3 = AppConfig.TextPrimary
+    UrlBox.TextSize = AppConfig.TextCaption
+    UrlBox.Font = Enum.Font.GothamMedium
+    UrlBox.TextXAlignment = Enum.TextXAlignment.Left
+    UrlBox.ClearTextOnFocus = false
+    UrlBox.Parent = DiscordCard
+    UIComponent.styleInput(UrlBox, AppConfig.RadiusMD)
+    UrlBox:GetPropertyChangedSignal("Text"):Connect(function()
+        AppConfig.DiscordWebhookURL = UrlBox.Text
+    end)
+
+    local EnableBtn = Instance.new("TextButton")
+    EnableBtn.Size = UDim2.new(0.5, -14, 0, 28)
+    EnableBtn.Position = UDim2.new(0, 10, 0, 88)
+    EnableBtn.BackgroundColor3 = AppConfig.DiscordWebhookEnabled and AppConfig.AccentGreen or AppConfig.RecessedBg
+    EnableBtn.Text = AppConfig.DiscordWebhookEnabled and "🟢 Enabled" or "🔴 Disabled"
+    EnableBtn.TextColor3 = AppConfig.DiscordWebhookEnabled and Color3.fromRGB(10, 20, 15) or AppConfig.TextSecondary
+    EnableBtn.TextSize = AppConfig.TextCaption
+    EnableBtn.Font = Enum.Font.GothamBold
+    EnableBtn.Parent = DiscordCard
+    UIComponent.styleButton(EnableBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
+
+    EnableBtn.MouseButton1Click:Connect(function()
+        if #AppConfig.DiscordWebhookURL < 20 then
+            updateStatus("Set webhook URL first", AppConfig.AccentRed)
+            return
         end
-        while #existing >= Config.Alerts.MaxStack do
-            local old = table.remove(existing, 1)
-            if old then old:Destroy() end
+        AppConfig.DiscordWebhookEnabled = not AppConfig.DiscordWebhookEnabled
+        if AppConfig.DiscordWebhookEnabled then
+            UIComponent.setButtonDefault(EnableBtn, AppConfig.AccentGreen)
+            EnableBtn.Text = "🟢 Enabled"
+            EnableBtn.TextColor3 = Color3.fromRGB(10, 20, 15)
+            DiscordWebhookComponent.startFlusher()
+            updateStatus("Discord Webhook enabled", AppConfig.AccentGreen)
+        else
+            UIComponent.setButtonDefault(EnableBtn, AppConfig.RecessedBg)
+            EnableBtn.Text = "🔴 Disabled"
+            EnableBtn.TextColor3 = AppConfig.TextSecondary
+            DiscordWebhookComponent.stopFlusher()
+            updateStatus("Discord Webhook disabled", AppConfig.TextSecondary)
+        end
+    end)
+
+    local TestBtn = Instance.new("TextButton")
+    TestBtn.Size = UDim2.new(0.5, -14, 0, 28)
+    TestBtn.Position = UDim2.new(0.5, 4, 0, 88)
+    TestBtn.BackgroundColor3 = AppConfig.AccentDiscord
+    TestBtn.Text = "📤 Send Test"
+    TestBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TestBtn.TextSize = AppConfig.TextCaption
+    TestBtn.Font = Enum.Font.GothamBold
+    TestBtn.Parent = DiscordCard
+    UIComponent.styleButton(TestBtn, AppConfig.RadiusMD, AppConfig.AccentDiscord)
+
+    TestBtn.MouseButton1Click:Connect(function()
+        if #AppConfig.DiscordWebhookURL < 20 then
+            updateStatus("Set webhook URL first", AppConfig.AccentRed)
+            return
+        end
+        local prev = AppConfig.DiscordWebhookEnabled
+        AppConfig.DiscordWebhookEnabled = true
+        local ok = DiscordWebhookComponent.test()
+        AppConfig.DiscordWebhookEnabled = prev
+        if ok then
+            updateStatus("Test webhook sent!", AppConfig.AccentGreen)
+        else
+            updateStatus("Test failed — check URL", AppConfig.AccentRed)
+        end
+    end)
+
+    local rareNotifToggle = UIComponent.createToggle(DiscordCard, "Notify Rare Eggs Only", "Disable to also notify every egg collected", AppConfig.DiscordNotifyRareEggs, function(v)
+        AppConfig.DiscordNotifyRareEggs = v
+    end)
+    rareNotifToggle.Position = UDim2.new(0, 4, 0, 122)
+    rareNotifToggle.Size = UDim2.new(1, -8, 0, 48)
+
+    local allNotifToggle = UIComponent.createToggle(DiscordCard, "Notify Every Egg", "Spammy — only enable if you want all events", AppConfig.DiscordNotifyEggCollected, function(v)
+        AppConfig.DiscordNotifyEggCollected = v
+    end)
+    allNotifToggle.Position = UDim2.new(0, 4, 0, 174)
+    allNotifToggle.Size = UDim2.new(1, -8, 0, 48)
+
+    local TimeCard = Instance.new("Frame")
+    TimeCard.Size = UDim2.new(1, -4, 0, 170)
+    TimeCard.LayoutOrder = 3
+    TimeCard.BackgroundColor3 = AppConfig.NestedCardBg
+    TimeCard.Parent = SettingsScroll
+    UIComponent.applyCard(TimeCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.AccentBlue, 0.55)
+
+    local TimeCardTitle = Instance.new("TextLabel")
+    TimeCardTitle.Size = UDim2.new(1, -20, 0, 22)
+    TimeCardTitle.Position = UDim2.new(0, 14, 0, 8)
+    TimeCardTitle.BackgroundTransparency = 1
+    TimeCardTitle.Text = "⏱️  Time & Session Monitor"
+    TimeCardTitle.TextColor3 = AppConfig.AccentBlue
+    TimeCardTitle.TextSize = AppConfig.TextHeader
+    TimeCardTitle.Font = Enum.Font.GothamBold
+    TimeCardTitle.TextXAlignment = Enum.TextXAlignment.Left
+    TimeCardTitle.Parent = TimeCard
+
+    local TimeInnerCard = Instance.new("Frame")
+    TimeInnerCard.Size = UDim2.new(1, -20, 0, 122)
+    TimeInnerCard.Position = UDim2.new(0, 10, 0, 38)
+    TimeInnerCard.BackgroundColor3 = AppConfig.RecessedBg
+    TimeInnerCard.Parent = TimeCard
+    UIComponent.applyCard(TimeInnerCard, AppConfig.RadiusLG, AppConfig.RecessedBg, AppConfig.BorderInner)
+
+    local function makeTimeRow(parent, yPos, icon, title, valueColor)
+        local rowFrame = Instance.new("Frame")
+        rowFrame.Size = UDim2.new(1, 0, 0, 28)
+        rowFrame.Position = UDim2.new(0, 0, 0, yPos)
+        rowFrame.BackgroundTransparency = 1
+        rowFrame.Parent = parent
+
+        local iconLbl = Instance.new("TextLabel")
+        iconLbl.Size = UDim2.new(0, 24, 1, 0)
+        iconLbl.Position = UDim2.new(0, 10, 0, 0)
+        iconLbl.BackgroundTransparency = 1
+        iconLbl.Text = icon
+        iconLbl.TextSize = 12
+        iconLbl.Font = Enum.Font.GothamBold
+        iconLbl.Parent = rowFrame
+
+        local titleLbl = Instance.new("TextLabel")
+        titleLbl.Size = UDim2.new(0.45, 0, 1, 0)
+        titleLbl.Position = UDim2.new(0, 34, 0, 0)
+        titleLbl.BackgroundTransparency = 1
+        titleLbl.Text = title
+        titleLbl.TextColor3 = AppConfig.TextSecondary
+        titleLbl.TextSize = AppConfig.TextCaption
+        titleLbl.Font = Enum.Font.GothamMedium
+        titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+        titleLbl.Parent = rowFrame
+
+        local valueLbl = Instance.new("TextLabel")
+        valueLbl.Size = UDim2.new(0.5, -10, 1, 0)
+        valueLbl.Position = UDim2.new(0.5, 0, 0, 0)
+        valueLbl.BackgroundTransparency = 1
+        valueLbl.Text = "--"
+        valueLbl.TextColor3 = valueColor or AppConfig.TextPrimary
+        valueLbl.TextSize = AppConfig.TextBody
+        valueLbl.Font = Enum.Font.GothamBold
+        valueLbl.TextXAlignment = Enum.TextXAlignment.Right
+        valueLbl.Parent = rowFrame
+
+        return valueLbl
+    end
+
+    local TmCurrentTimeValue = makeTimeRow(TimeInnerCard, 6,  "🕐", "Current Time",   AppConfig.AccentBlue)
+    local TmSessionTimeValue = makeTimeRow(TimeInnerCard, 34, "⏳", "Session Uptime",  AppConfig.AccentGreen)
+    local TmStartTimeValue   = makeTimeRow(TimeInnerCard, 62, "📅", "Session Started", AppConfig.TextSecondary)
+    local TmEggsPerMinValue  = makeTimeRow(TimeInnerCard, 90, "🥚", "Eggs / Minute",  AppConfig.AccentGold)
+
+    TmStartTimeValue.Text = os.date("%H:%M:%S", StateStore.sessionStartTime)
+
+    local function refreshTimeLabels()
+        local now = os.time()
+        local elapsed = now - StateStore.sessionStartTime
+        local h = math.floor(elapsed / 3600)
+        local m = math.floor((elapsed % 3600) / 60)
+        local s = elapsed % 60
+        TmCurrentTimeValue.Text = os.date("%H:%M:%S")
+        TmSessionTimeValue.Text = string.format("%02d:%02d:%02d", h, m, s)
+        local epm = (elapsed > 0) and string.format("%.1f", StateStore.totalEggsCollected / (elapsed / 60)) or "0.0"
+        TmEggsPerMinValue.Text = epm .. " eggs/min"
+        if ClockLabel and ClockLabel.Parent then
+            ClockLabel.Text = os.date("%H:%M:%S")
+        end
+    end
+    StateStore.onTimeUpdated = refreshTimeLabels
+    refreshTimeLabels()
+
+    local PlotCard = Instance.new("Frame")
+    PlotCard.Size = UDim2.new(1, -4, 0, 76)
+    PlotCard.LayoutOrder = 4
+    PlotCard.BackgroundColor3 = AppConfig.NestedCardBg
+    PlotCard.Parent = SettingsScroll
+    UIComponent.applyCard(PlotCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
+
+    local PltTitle = Instance.new("TextLabel")
+    PltTitle.Size = UDim2.new(1, -20, 0, 20)
+    PltTitle.Position = UDim2.new(0, 14, 0, 8)
+    PltTitle.BackgroundTransparency = 1
+    PltTitle.Text = "Home Plot Detection Diagnostic"
+    PltTitle.TextColor3 = AppConfig.TextPrimary
+    PltTitle.TextSize = AppConfig.TextHeader
+    PltTitle.Font = Enum.Font.GothamBold
+    PltTitle.TextXAlignment = Enum.TextXAlignment.Left
+    PltTitle.Parent = PlotCard
+
+    local CheckPlotBtn = Instance.new("TextButton")
+    CheckPlotBtn.Size = UDim2.new(1, -20, 0, 30)
+    CheckPlotBtn.Position = UDim2.new(0, 10, 0, 36)
+    CheckPlotBtn.BackgroundColor3 = AppConfig.RecessedBg
+    CheckPlotBtn.Text = "🔍 Check Home Plot Link"
+    CheckPlotBtn.TextColor3 = AppConfig.TextPrimary
+    CheckPlotBtn.TextSize = AppConfig.TextCaption
+    CheckPlotBtn.Font = Enum.Font.GothamBold
+    CheckPlotBtn.Parent = PlotCard
+    UIComponent.styleButton(CheckPlotBtn, AppConfig.RadiusMD, AppConfig.RecessedBg)
+
+    CheckPlotBtn.MouseButton1Click:Connect(function()
+        local plot = PlotComponent.findHomePlot()
+        if plot then
+            updateStatus("Plot Linked: " .. plot.Name, AppConfig.AccentGreen)
+            CheckPlotBtn.Text = "✅ Home Plot Linked: " .. plot.Name
+        else
+            updateStatus("No Home Plot Detected", AppConfig.AccentRed)
+            CheckPlotBtn.Text = "❌ No Home Plot Linked (Ensure plot claimed)"
+        end
+    end)
+
+    -- RARE EGG ALERTS
+    local function showRareAlert(egg)
+        if not StateStore.shouldAlert(egg.Name) then return end
+
+        local alerts = AlertStack:GetChildren()
+        local count = 0
+        for _, child in ipairs(alerts) do
+            if child:IsA("Frame") then
+                count += 1
+                if count >= AppConfig.MaxAlerts then child:Destroy() end
+            end
         end
 
         local card = Instance.new("Frame")
         card.Size = UDim2.new(1, 0, 0, 70)
-        card.BackgroundColor3 = C.OuterCard
+        card.BackgroundColor3 = AppConfig.OuterCardBg
         card.Position = UDim2.new(1, 60, 0, 0)
         card.Parent = AlertStack
-        UI.applyCard(card, R.R2XL, C.OuterCard, C.AccentGold, 0.2)
+        UIComponent.applyCard(card, AppConfig.Radius2XL, AppConfig.OuterCardBg, AppConfig.AccentGold, 0.2)
 
-        local inner = Instance.new("Frame")
-        inner.Size = UDim2.new(1, -12, 1, -12)
-        inner.Position = UDim2.new(0, 6, 0, 6)
-        inner.BackgroundColor3 = C.NestedCard
-        inner.Parent = card
-        UI.applyCard(inner, R.RXL, C.NestedCard, C.BorderInner)
+        local innerCard = Instance.new("Frame")
+        innerCard.Size = UDim2.new(1, -12, 1, -12)
+        innerCard.Position = UDim2.new(0, 6, 0, 6)
+        innerCard.BackgroundColor3 = AppConfig.NestedCardBg
+        innerCard.Parent = card
+        UIComponent.applyCard(innerCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
 
-        local ico = Instance.new("ImageLabel")
-        ico.Size = UDim2.new(0, 40, 0, 40)
-        ico.Position = UDim2.new(0, 10, 0.5, -20)
-        ico.BackgroundTransparency = 1
-        ico.Image = Util.getEggImage(egg.Name)
-        ico.ScaleType = Enum.ScaleType.Fit
-        ico.Parent = inner
+        local eggIcon = Instance.new("ImageLabel")
+        eggIcon.Size = UDim2.new(0, 40, 0, 40)
+        eggIcon.Position = UDim2.new(0, 10, 0.5, -20)
+        eggIcon.BackgroundTransparency = 1
+        eggIcon.Image = Utils.getEggImage(egg.Name)
+        eggIcon.ScaleType = Enum.ScaleType.Fit
+        eggIcon.Parent = innerCard
 
         local badge = Instance.new("TextLabel")
         badge.Size = UDim2.new(1, -120, 0, 14)
         badge.Position = UDim2.new(0, 56, 0, 8)
         badge.BackgroundTransparency = 1
         badge.Text = "✨ RARE EGG SPAWNED!"
-        badge.TextColor3 = C.AccentGold
-        badge.TextSize = T.Caption
+        badge.TextColor3 = AppConfig.AccentGold
+        badge.TextSize = AppConfig.TextCaption
         badge.Font = Enum.Font.GothamBold
         badge.TextXAlignment = Enum.TextXAlignment.Left
-        badge.Parent = inner
+        badge.Parent = innerCard
 
-        local n = Instance.new("TextLabel")
-        n.Size = UDim2.new(1, -120, 0, 18)
-        n.Position = UDim2.new(0, 56, 0, 22)
-        n.BackgroundTransparency = 1
-        n.Text = egg.Name
-        n.TextColor3 = C.TextPrimary
-        n.TextSize = T.Title
-        n.Font = Enum.Font.GothamBold
-        n.TextXAlignment = Enum.TextXAlignment.Left
-        n.TextTruncate = Enum.TextTruncate.AtEnd
-        n.Parent = inner
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(1, -120, 0, 18)
+        nameLabel.Position = UDim2.new(0, 56, 0, 22)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.Text = egg.Name
+        nameLabel.TextColor3 = AppConfig.TextPrimary
+        nameLabel.TextSize = AppConfig.TextTitle
+        nameLabel.Font = Enum.Font.GothamBold
+        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+        nameLabel.Parent = innerCard
 
-        local dl = Instance.new("TextLabel")
-        dl.Size = UDim2.new(1, -120, 0, 14)
-        dl.Position = UDim2.new(0, 56, 0, 40)
-        dl.BackgroundTransparency = 1
-        local d = Util.getDistance(egg)
-        dl.Text = (d ~= math.huge)
-            and string.format("📍 %dst away", math.floor(d + 0.5))
-            or "📍 Unknown"
-        dl.TextColor3 = C.TextSecondary
-        dl.TextSize = T.Caption
-        dl.Font = Enum.Font.GothamMedium
-        dl.TextXAlignment = Enum.TextXAlignment.Left
-        dl.Parent = inner
+        local distLabel = Instance.new("TextLabel")
+        distLabel.Size = UDim2.new(1, -120, 0, 14)
+        distLabel.Position = UDim2.new(0, 56, 0, 40)
+        distLabel.BackgroundTransparency = 1
+        local d = Utils.getDistanceToTarget(egg)
+        local kg = Utils.getEggWeight(egg)
+        distLabel.Text = string.format("📍 %s away • ⚖️ %s", Utils.formatDistance(d), Utils.formatWeight(kg))
+        distLabel.TextColor3 = AppConfig.TextSecondary
+        distLabel.TextSize = AppConfig.TextCaption
+        distLabel.Font = Enum.Font.GothamMedium
+        distLabel.TextXAlignment = Enum.TextXAlignment.Left
+        distLabel.Parent = innerCard
 
-        local tp = Instance.new("TextButton")
-        tp.Size = UDim2.new(0, 56, 0, 28)
-        tp.Position = UDim2.new(1, -62, 0.5, -14)
-        tp.BackgroundColor3 = C.AccentGold
-        tp.Text = "⚡ TP"
-        tp.TextColor3 = Color3.fromRGB(15,15,20)
-        tp.TextSize = T.Body
-        tp.Font = Enum.Font.GothamBold
-        tp.Parent = inner
-        UI.styleButton(tp, R.RMD, C.AccentGold)
+        local tpBtn = Instance.new("TextButton")
+        tpBtn.Size = UDim2.new(0, 56, 0, 28)
+        tpBtn.Position = UDim2.new(1, -62, 0.5, -14)
+        tpBtn.BackgroundColor3 = AppConfig.AccentGold
+        tpBtn.Text = "⚡ TP"
+        tpBtn.TextColor3 = Color3.fromRGB(15, 15, 20)
+        tpBtn.TextSize = AppConfig.TextBody
+        tpBtn.Font = Enum.Font.GothamBold
+        tpBtn.Parent = innerCard
+        UIComponent.styleButton(tpBtn, AppConfig.RadiusMD, AppConfig.AccentGold)
 
-        tp.MouseButton1Click:Connect(function()
+        tpBtn.MouseButton1Click:Connect(function()
             if egg and egg.Parent then
-                Movement.teleportTo(egg)
-                Bus.emit("status", "Teleported to "..egg.Name, C.AccentGold)
+                MovementComponent.teleportTo(egg)
+                updateStatus("Teleported to " .. egg.Name, AppConfig.AccentGold)
             end
             pcall(function() card:Destroy() end)
         end)
 
-        Util.tween(card, { Position = UDim2.new(0,0,0,0) }, 0.25, Enum.EasingStyle.Back)
+        Utils.tween(card, { Position = UDim2.new(0, 0, 0, 0) }, 0.25, Enum.EasingStyle.Back)
 
-        task.delay(Config.Alerts.Duration, function()
+        task.delay(AppConfig.AlertDuration, function()
             if card and card.Parent then
-                Util.tween(card, { BackgroundTransparency = 1 }, 0.3)
+                Utils.tween(card, { BackgroundTransparency = 1 }, 0.3)
                 task.wait(0.32)
                 pcall(function() card:Destroy() end)
             end
         end)
-    end)
+    end
 
-    --====================================
-    -- Dragging
-    --====================================
-    local dragging, dragStart, startPos = false, nil, nil
+    -- DRAGGABLE
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+
     TopBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = MainFrame.Position
         end
     end)
-    Util.track(Services.UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
+
+    StateStore.track(ServiceManager.UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = false
         end
     end))
-    Util.track(Services.UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch) then
+
+    StateStore.track(ServiceManager.UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
-            local cam = Services.Workspace.CurrentCamera
+            local cam = ServiceManager.Workspace.CurrentCamera
             local vp = cam and cam.ViewportSize or Vector2.new(1920, 1080)
             local fw = MainFrame.AbsoluteSize.X
             local fh = MainFrame.AbsoluteSize.Y
@@ -3181,217 +4559,287 @@ function UI.mount()
         end
     end))
 
-    --====================================
-    -- Global key handler
-    --====================================
-    Util.track(Services.UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if State.listeningForKey then
+    -- KEYBIND HANDLER
+    StateStore.track(ServiceManager.UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if StateStore.listeningForKey then
             if input.UserInputType == Enum.UserInputType.Keyboard then
-                State.tpKeybind = input.KeyCode
-                State.listeningForKey = false
-                KeyBtn.Text = "⌨️  Current: ["..State.tpKeybind.Name.."] (Click to remap)"
-                KeyBtn.TextColor3 = C.AccentGold
-                Bus.emit("status", "Keybind: "..State.tpKeybind.Name, C.AccentGreen)
+                StateStore.tpKeybind = input.KeyCode
+                StateStore.listeningForKey = false
+                KeybindBtn.Text = "⌨️  Current Keybind: [" .. StateStore.tpKeybind.Name .. "] (Click to remap)"
+                KeybindBtn.TextColor3 = AppConfig.AccentGold
+                updateStatus("Keybind Set: " .. StateStore.tpKeybind.Name, AppConfig.AccentGreen)
             end
             return
         end
         if gameProcessed then return end
+
         if input.KeyCode == Enum.KeyCode.Escape then
-            if not State.isMinimized then toggleMinimize() end
+            if not StateStore.isMinimized then toggleMinimize() end
             return
         end
-        if input.KeyCode == Enum.KeyCode.Period or input.KeyCode == Enum.KeyCode.Comma then
+
+        if input.KeyCode == Enum.KeyCode.Period then
             local ids = {}
             for _, t in ipairs(Tabs) do table.insert(ids, t.id) end
-            local idx = table.find(ids, currentTab) or 1
-            local nextIdx = (input.KeyCode == Enum.KeyCode.Period)
-                and (idx % #ids) + 1
-                or ((idx - 2) % #ids) + 1
-            switchTab(ids[nextIdx])
+            local idx = table.find(ids, currentActiveTab) or 1
+            switchTab(ids[(idx % #ids) + 1])
             return
         end
-        if input.UserInputType == Enum.UserInputType.Keyboard
-            and input.KeyCode == State.tpKeybind then
-            Plot.teleportAndDeposit()
+        if input.KeyCode == Enum.KeyCode.Comma then
+            local ids = {}
+            for _, t in ipairs(Tabs) do table.insert(ids, t.id) end
+            local idx = table.find(ids, currentActiveTab) or 1
+            switchTab(ids[((idx - 2) % #ids) + 1])
+            return
+        end
+
+        if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == StateStore.tpKeybind then
+            PlotComponent.teleportAndDeposit()
         end
     end))
 
-    --====================================
-    -- Mode application
-    --====================================
+    -- DEVICE MODE
     local function applyMode(mode)
-        State.windowMode = mode
-        local w, h
-        if mode == "PC" then w, h = Config.UI.PC.W, Config.UI.PC.H
-        else                  w, h = Config.UI.Mobile.W, Config.UI.Mobile.H end
+        StateStore.windowMode = mode
+        StateStore.isMobileMode = (mode == "Mobile")
+        local w, h = currentSize()
         MainFrame.Size = UDim2.new(0, w, 0, h)
-        MainFrame.Position = UDim2.new(0.5, -w/2, 0.5, -h/2)
+        MainFrame.Position = UDim2.new(0.5, -w / 2, 0.5, -h / 2)
         if DeviceFrame and DeviceFrame.Parent then DeviceFrame:Destroy() end
         MainFrame.Visible = true
-        Sidebar.Visible = not State.isMinimized
-        ContentArea.Visible = not State.isMinimized
-        refreshMoveUI()
+        Sidebar.Visible = not StateStore.isMinimized
+        ContentArea.Visible = not StateStore.isMinimized
+        updateMovementModeUI()
         populateList()
-        updateLiveChips()
+        updateLiveEggsSummary()
     end
 
     PCBtn.MouseButton1Click:Connect(function() applyMode("PC") end)
     MobileBtn.MouseButton1Click:Connect(function() applyMode("Mobile") end)
-    SetPC.MouseButton1Click:Connect(function() applyMode("PC") end)
-    SetMob.MouseButton1Click:Connect(function() applyMode("Mobile") end)
+    SetPCBtn.MouseButton1Click:Connect(function() applyMode("PC") end)
+    SetMobileBtn.MouseButton1Click:Connect(function() applyMode("Mobile") end)
+    FootPC.MouseButton1Click:Connect(function() applyMode("PC") end)
+    FootMobile.MouseButton1Click:Connect(function() applyMode("Mobile") end)
 
-    if Services.UserInputService.TouchEnabled
-        and not Services.UserInputService.KeyboardEnabled then
+    if ServiceManager.UserInputService.TouchEnabled and not ServiceManager.UserInputService.KeyboardEnabled then
         task.defer(function() applyMode("Mobile") end)
     end
 
-    --====================================
-    -- Time heartbeat
-    --====================================
-    local clockAcc = 0
-    Util.track(Services.RunService.Heartbeat:Connect(function(dt)
+    -- TIME HEARTBEAT
+    local timeTick = 0
+    StateStore.track(ServiceManager.RunService.Heartbeat:Connect(function(dt)
         if not (ScreenGui and ScreenGui.Parent) then return end
-        clockAcc = clockAcc + dt
-        if clockAcc >= 1 then
-            clockAcc -= 1
-            refreshTime()
+        timeTick = timeTick + dt
+        if timeTick >= 1 then
+            timeTick = timeTick - 1
+            if ClockLabel and ClockLabel.Parent then
+                ClockLabel.Text = os.date("%H:%M:%S")
+            end
+            if StateStore.onTimeUpdated then
+                StateStore.onTimeUpdated()
+            end
         end
     end))
 
     task.defer(function()
         populateList()
-        updateLiveChips()
-        refreshHistory()
+        updateLiveEggsSummary()
+        updateBackpackUI()
+        updateHistoryUI()
     end)
 
     return {
-        ScreenGui = ScreenGui,
         populateList = populateList,
-        updateLiveChips = updateLiveChips,
+        updateLiveEggsSummary = updateLiveEggsSummary,
+        updateBackpackUI = updateBackpackUI,
+        showRareAlert = showRareAlert,
+        ScreenGui = ScreenGui,
     }
 end
 
 --==================================================
--- [15] BOOTSTRAP — composition root
+-- [13] COMPONENT: AppBootstrap
 --==================================================
-local function bootstrap()
-    -- Cleanup stale globals
-    local existing = getgenv and getgenv().EggsESP
-    if existing and existing.API and existing.API.Cleanup then
-        pcall(existing.API.Cleanup)
+local function cleanup()
+    if DiscordWebhookComponent and DiscordWebhookComponent.isEnabled and DiscordWebhookComponent.isEnabled() then
+        pcall(function()
+            DiscordWebhookComponent.notifySession("end", {
+                player = ServiceManager.LocalPlayer.Name,
+                jobId = game.JobId,
+                placeId = tostring(game.PlaceId),
+                uptime = (function()
+                    local e = os.time() - StateStore.sessionStartTime
+                    return string.format("%02d:%02d:%02d",
+                        math.floor(e/3600), math.floor((e%3600)/60), e%60)
+                end)(),
+                totalEggs = StateStore.totalEggsCollected,
+                eggList = StateStore.farmHistory,
+            })
+            DiscordWebhookComponent.flush()
+        end)
     end
 
-    Bus.clear()
+    for _, conn in ipairs(StateStore._connections) do
+        pcall(function() conn:Disconnect() end)
+    end
+    table.clear(StateStore._connections)
 
-    local ui = UI.mount()
-    if not ui then
-        warn("[EggsESP] Failed to mount UI (no TargetParent).")
-        return
+    if StateStore.antiAFKConnection then
+        pcall(function() StateStore.antiAFKConnection:Disconnect() end)
+        StateStore.antiAFKConnection = nil
+    end
+    if StateStore.noclipConnection then
+        pcall(function() StateStore.noclipConnection:Disconnect() end)
+        StateStore.noclipConnection = nil
     end
 
-    -- Character respawn handling
-    if Services.LocalPlayer then
-        Util.track(Services.LocalPlayer.CharacterAdded:Connect(function()
-            Movement.stop()
-            task.wait(1.0)
-            Util.resetVelocity(Util.getRoot())
-        end))
+    FarmComponent.stopAutoFarm()
+    FarmComponent.stopAutoBestEgg()
+    RebirthComponent.stopAutoRebirth()
+    MovementComponent.stop()
+
+    if StateStore.screenGui then
+        pcall(function() StateStore.screenGui:Destroy() end)
+        StateStore.screenGui = nil
     end
 
-    -- ESP periodic updater
-    ESP.startUpdater()
+    ReconnectComponent.isReconnecting = false
+    pcall(function() DiscordWebhookComponent.stopFlusher() end)
+    StateStore.reset()
+end
 
-    -- Bind RenderedEggs folder
-    local function bindFolder(folder)
-        if not folder then return end
-        local dirty = false
-        local function queueRefresh()
-            if dirty then return end
-            dirty = true
-            task.delay(0.25, function()
-                dirty = false
-                if ui.ScreenGui and ui.ScreenGui.Parent then
-                    ui.populateList()
-                    ui.updateLiveChips()
+local function startApplication()
+    cleanup()
+
+    local UI = UIComponent.mount()
+
+    StateStore.track(ServiceManager.LocalPlayer.CharacterAdded:Connect(function()
+        MovementComponent.stop()
+        task.wait(1.0)
+        Utils.resetVelocity(Utils.getRootPart())
+    end))
+
+    task.spawn(function()
+        while UI and UI.ScreenGui and UI.ScreenGui.Parent do
+            for egg, data in pairs(StateStore.eggData) do
+                if egg and egg.Parent then
+                    if data.NameBillboard and data.NameBillboard.Enabled then
+                        ESPComponent.updateBillboard(egg)
+                    end
+                else
+                    ESPComponent.removeEgg(egg)
                 end
+            end
+            task.wait(0.3)
+        end
+    end)
+
+    local function bindEggFolder(folder)
+        local debounce = false
+        local function queueUpdate()
+            if debounce then return end
+            debounce = true
+            task.delay(0.25, function()
+                debounce = false
+                UI.populateList()
+                UI.updateLiveEggsSummary()
             end)
         end
-        Util.track(folder.ChildAdded:Connect(function(egg)
-            State.autoFarmProcessed[egg] = nil
-            State.eggCooldowns[egg]      = nil
-            ESP.updateEgg(egg)
-            ESP.bindEgg(egg)
-            queueRefresh()
-            if Util.isRare(egg.Name) then
-                Bus.emit("rare-egg", egg)
-            end
+
+        StateStore.track(folder.ChildAdded:Connect(function(egg)
+            StateStore.autoFarmProcessed[egg] = nil
+            StateStore.eggCooldowns[egg] = nil
+            ESPComponent.updateEgg(egg)
+            ESPComponent.bindEggLifecycle(egg)
+            queueUpdate()
+            if Utils.isRareEgg(egg.Name) then UI.showRareAlert(egg) end
         end))
-        Util.track(folder.ChildRemoved:Connect(function(egg)
-            ESP.removeEgg(egg)
-            queueRefresh()
+
+        StateStore.track(folder.ChildRemoved:Connect(function(egg)
+            ESPComponent.removeEgg(egg)
+            queueUpdate()
         end))
+
         for _, egg in ipairs(folder:GetChildren()) do
-            ESP.updateEgg(egg)
-            ESP.bindEgg(egg)
+            ESPComponent.updateEgg(egg)
+            ESPComponent.bindEggLifecycle(egg)
         end
     end
 
-    if Services.RenderedEggsFolder then
-        bindFolder(Services.RenderedEggsFolder)
+    if ServiceManager.RenderedEggsFolder then
+        bindEggFolder(ServiceManager.RenderedEggsFolder)
     else
         task.spawn(function()
-            local folder = Services.Workspace
-                and Services.Workspace:WaitForChild("RenderedEggs", 60)
+            local folder = ServiceManager.Workspace:WaitForChild("RenderedEggs", 60)
             if folder then
-                Services.RenderedEggsFolder = folder
-                bindFolder(folder)
-                ui.populateList()
-                ui.updateLiveChips()
+                ServiceManager.RenderedEggsFolder = folder
+                bindEggFolder(folder)
+                UI.populateList()
+                UI.updateLiveEggsSummary()
             end
         end)
     end
 
-    Stability.setAntiAFK(true)
-    Stability.setupAutoRejoin()
+    StabilityComponent.setupAntiAFK(true)
+    StabilityComponent.setupAutoRejoin()
+    ReconnectComponent.start()
 
-    -- -- Public API --
-    local api = {
-        Version  = Config.Version,
-        Config   = Config,
-        State    = State,
-        Modules  = { Farm = Farm, Rebirth = Rebirth, ESP = ESP,
-                     Movement = Movement, Plot = Plot, UI = UI },
-        API = {
-            FireRebirth          = Rebirth.fire,
-            GetMissingRebirthEggs= Rebirth.scanMissing,
-            StartAutoRebirth     = Rebirth.start,
-            StopAutoRebirth      = Rebirth.stop,
-            StartFarm            = Farm.startAutoFarm,
-            StopFarm             = Farm.stopAutoFarm,
-            Cleanup              = function()
-                State._generation = State._generation + 1
-                Farm.stopAutoFarm()
-                Farm.stopAutoBestEgg()
-                Rebirth.stop()
-                Movement.stop()
-                if State.screenGui then
-                    pcall(function() State.screenGui:Destroy() end)
-                    State.screenGui = nil
-                end
-                Util.disconnectAll()
-                Bus.clear()
-                if State.antiAFKActive then
-                    -- re-enable for future runs
-                end
-            end,
-        },
+    -- Discord webhook flusher + session start notification
+    DiscordWebhookComponent.startFlusher()
+    if DiscordWebhookComponent.isEnabled() then
+        DiscordWebhookComponent.notifySession("start", {
+            player = ServiceManager.LocalPlayer.Name,
+            jobId = game.JobId,
+            placeId = tostring(game.PlaceId),
+            totalEggs = StateStore.totalEggsCollected,
+        })
+    end
+
+    local existing = getgenv().EggsESP or {}
+    existing.Version = AppConfig.Version
+    existing.Config = AppConfig
+    existing.State = StateStore
+    existing.Components = {
+        Farm = FarmComponent,
+        Rebirth = RebirthComponent,
+        ESP = ESPComponent,
+        Movement = MovementComponent,
+        Plot = PlotComponent,
+        Reconnect = ReconnectComponent,
+        Discord = DiscordWebhookComponent,
     }
-    if getgenv then getgenv().EggsESP = api end
+    existing.API = {
+        FireRebirth = RebirthComponent.fireRebirth,
+        GetMissingRebirthEggs = RebirthComponent.scanMissingEggs,
+        StartAutoRebirth = RebirthComponent.startAutoRebirth,
+        StopAutoRebirth = RebirthComponent.stopAutoRebirth,
+        Cleanup = cleanup,
+        GetEggWeight = Utils.getEggWeight,
+        FormatWeight = Utils.formatWeight,
+        TogglePin = ESPComponent.togglePin,
+        RefreshBillboards = ESPComponent.refreshAllBillboards,
+        StartAutoReconnect = ReconnectComponent.start,
+        StopAutoReconnect = ReconnectComponent.stop,
+        IsDisconnected = ReconnectComponent.isDisconnected,
+        ForceRejoin = ReconnectComponent.attemptRejoin,
+        DiscordTest = DiscordWebhookComponent.test,
+        DiscordFlush = DiscordWebhookComponent.flush,
+        DiscordSetURL = function(url) AppConfig.DiscordWebhookURL = url end,
+        DiscordEnable = function(enabled)
+            AppConfig.DiscordWebhookEnabled = enabled
+            if enabled then DiscordWebhookComponent.startFlusher()
+            else DiscordWebhookComponent.stopFlusher() end
+        end,
+    }
+    getgenv().EggsESP = existing
 
-    print(("[EggsESP] v%s initialized (%d eggs tracked).")
-        :format(Config.Version, #(Services.RenderedEggsFolder and
-                                  Services.RenderedEggsFolder:GetChildren() or {})))
+    getgenv().EggsESP_ToggleReconnect = function(enabled)
+        AppConfig.AutoRerunOnDisconnect = enabled
+        if enabled then ReconnectComponent.start() else ReconnectComponent.stop() end
+    end
+
+    print(("[Eggs ESP Pro v%s] Loaded • Discord webhook: %s")
+        :format(AppConfig.Version, AppConfig.DiscordWebhookEnabled and "ENABLED" or "disabled"))
 end
 
--- Run
-bootstrap()
+startApplication()
