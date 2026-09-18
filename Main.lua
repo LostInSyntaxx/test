@@ -19,7 +19,6 @@ local AppConfig = {
     },
     ESPRareColor = Color3.fromRGB(255, 215, 0),
 
-    -- [v2.2.0] ESP Enhancement Tokens
     ESPWeightUnit = "kg",
     ESPDistanceUnit = "studs",
     ESPESPStyle = "Both",
@@ -101,35 +100,25 @@ local AppConfig = {
     TextSecondary = Color3.fromRGB(163, 163, 163),
     TextMuted = Color3.fromRGB(110, 110, 110),
 
-    -- [v2.2.0] Auto-rerun on disconnect
-    AutoRerunOnDisconnect = true,
-    AutoRerunDelay = 5,
-    AutoRerunMaxAttempts = 10,
-    AutoRerunLoaderURL = "https://raw.githubusercontent.com/ThiAez/EggsESP/main/loader.lua",
-
     -- [v2.2.0] Discord Webhook (Eggs ESP Pro style)
     DiscordWebhookEnabled = false,
     DiscordWebhookURL = "",
     DiscordWebhookUsername = "Eggs ESP Pro",
     DiscordWebhookAvatarURL = "",
 
-    -- Branding
     DiscordFooterText = "Eggs ESP Pro",
     DiscordBannerURL = "",
     DiscordThumbnailURL = "",
 
-    -- Notifications
     DiscordNotifyRareEggs = true,
     DiscordNotifyEggCollected = false,
     DiscordNotifySessionStart = true,
     DiscordNotifyDisconnect = true,
     DiscordNotifySessionEnd = true,
 
-    -- Queue
     DiscordQueueFlushInterval = 5,
     DiscordMaxQueueSize = 25,
 
-    -- Mentions
     DiscordMentionRoleID = "",
     DiscordMentionUserID = "",
 }
@@ -172,7 +161,7 @@ ServiceManager.QueueOnTeleport = (syn and syn.queue_on_teleport)
 
 ServiceManager.RenderedEggsFolder = ServiceManager.Workspace:WaitForChild("RenderedEggs", 8)
 
--- Forward declaration for DiscordWebhookComponent (defined in [5c])
+-- Forward declaration for DiscordWebhookComponent (defined later)
 local DiscordWebhookComponent
 
 --==================================================
@@ -218,7 +207,6 @@ local StateStore = {
     windowMode = "PC",
     screenGui = nil,
 
-    -- [v2.2.0] ESP Enhancement State
     espStyle = "Both",
     espMaxRenderDistance = 500,
     espWeightUnit = "kg",
@@ -231,12 +219,6 @@ local StateStore = {
     espShowRarityTag = true,
     pinnedEggs = setmetatable({}, { __mode = "k" }),
     sortByWeight = false,
-
-    -- [v2.2.0] Auto-rerun state
-    autoRerunActive = true,
-    autoRerunAttempts = 0,
-    autoRerunLastDisconnect = 0,
-    autoRerunInProgress = false,
 }
 
 function StateStore.track(conn)
@@ -262,7 +244,7 @@ function StateStore.addHistoryRecord(eggName)
     StateStore.totalEggsCollected = StateStore.totalEggsCollected + 1
     if StateStore.onHistoryUpdated then StateStore.onHistoryUpdated() end
 
-    -- [v2.2.0] Discord notification (queued)
+    -- Discord notification (queued)
     if DiscordWebhookComponent and DiscordWebhookComponent.notifyEgg then
         local ok, err = pcall(function()
             local egg = ServiceManager.RenderedEggsFolder
@@ -651,166 +633,6 @@ function StabilityComponent.setupAutoRejoin()
 end
 
 --==================================================
--- [5b] COMPONENT: ReconnectComponent
---==================================================
-local ReconnectComponent = {}
-
-ReconnectComponent.attempts = 0
-ReconnectComponent.lastDisconnect = 0
-ReconnectComponent.isReconnecting = false
-
-function ReconnectComponent.isDisconnected()
-    local ok, parent = pcall(function()
-        return ServiceManager.LocalPlayer and ServiceManager.LocalPlayer.Parent
-    end)
-    if not ok or not parent then return true end
-
-    local networkOk = pcall(function()
-        return ServiceManager.HttpService:GetAsync("https://www.google.com", true)
-    end)
-    if not networkOk then return true end
-
-    local ok2, coreGui = pcall(function() return game:GetService("CoreGui") end)
-    if ok2 and coreGui then
-        local promptGui = coreGui:FindFirstChild("RobloxPromptGui")
-        if promptGui then
-            local overlay = promptGui:FindFirstChild("promptOverlay")
-            if overlay then
-                if overlay:FindFirstChild("ErrorPrompt") or overlay:FindFirstChild("Disconnect") then
-                    return true
-                end
-            end
-        end
-    end
-    return false
-end
-
-function ReconnectComponent.attemptRejoin()
-    if ReconnectComponent.isReconnecting then return end
-    if not AppConfig.AutoRerunOnDisconnect then return end
-    ReconnectComponent.isReconnecting = true
-
-    -- Discord: notify disconnect + attempt
-    pcall(function()
-        if DiscordWebhookComponent and DiscordWebhookComponent.isEnabled and DiscordWebhookComponent.isEnabled() then
-            DiscordWebhookComponent.notifySession("disconnect", {
-                player = ServiceManager.LocalPlayer.Name,
-                jobId = game.JobId,
-                placeId = tostring(game.PlaceId),
-                reattempt = ReconnectComponent.attempts,
-                totalEggs = StateStore.totalEggsCollected,
-                reason = "Auto-rerun triggered",
-            })
-            DiscordWebhookComponent.flush()
-        end
-    end)
-
-    if ServiceManager.QueueOnTeleport then
-        local queued = pcall(function()
-            ServiceManager.QueueOnTeleport(string.format([[
-                task.wait(%d)
-                pcall(function()
-                    loadstring(game:HttpGet("%s"))()
-                end)
-            ]], AppConfig.AutoRerunDelay, AppConfig.AutoRerunLoaderURL))
-        end)
-        if queued then
-            pcall(function()
-                ServiceManager.TeleportService:Teleport(game.PlaceId, ServiceManager.LocalPlayer)
-            end)
-            ReconnectComponent.isReconnecting = false
-            return
-        end
-    end
-
-    pcall(function()
-        if #ServiceManager.Players:GetPlayers() <= 1 then
-            ServiceManager.TeleportService:Teleport(game.PlaceId, ServiceManager.LocalPlayer)
-        else
-            ServiceManager.TeleportService:TeleportToPlaceInstance(
-                game.PlaceId, game.JobId, ServiceManager.LocalPlayer
-            )
-        end
-    end)
-
-    ReconnectComponent.isReconnecting = false
-end
-
-function ReconnectComponent.start()
-    if not AppConfig.AutoRerunOnDisconnect then return end
-
-    StateStore.track(ServiceManager.Players.PlayerRemoving:Connect(function(plr)
-        if plr == ServiceManager.LocalPlayer then
-            ReconnectComponent.lastDisconnect = os.clock()
-            task.wait(1.5)
-            if ReconnectComponent.attempts < AppConfig.AutoRerunMaxAttempts then
-                ReconnectComponent.attempts += 1
-                ReconnectComponent.attemptRejoin()
-            end
-        end
-    end))
-
-    task.spawn(function()
-        local coreGui = game:GetService("CoreGui")
-        local promptGui = coreGui:WaitForChild("RobloxPromptGui", 15)
-        if not promptGui then return end
-        local overlay = promptGui:WaitForChild("promptOverlay", 15)
-        if not overlay then return end
-
-        if overlay:FindFirstChild("ErrorPrompt") or overlay:FindFirstChild("Disconnect") then
-            ReconnectComponent.lastDisconnect = os.clock()
-            task.wait(2)
-            if ReconnectComponent.attempts < AppConfig.AutoRerunMaxAttempts then
-                ReconnectComponent.attempts += 1
-                ReconnectComponent.attemptRejoin()
-            end
-        end
-
-        StateStore.track(overlay.ChildAdded:Connect(function(child)
-            if child.Name == "ErrorPrompt" or child.Name == "Disconnect" then
-                ReconnectComponent.lastDisconnect = os.clock()
-                task.wait(2)
-                if ReconnectComponent.attempts < AppConfig.AutoRerunMaxAttempts then
-                    ReconnectComponent.attempts += 1
-                    ReconnectComponent.attemptRejoin()
-                end
-            end
-        end))
-    end)
-
-    task.spawn(function()
-        while AppConfig.AutoRerunOnDisconnect do
-            task.wait(3)
-            if ReconnectComponent.isDisconnected() then
-                local now = os.clock()
-                if (now - ReconnectComponent.lastDisconnect) > 8 then
-                    ReconnectComponent.lastDisconnect = now
-                    if ReconnectComponent.attempts < AppConfig.AutoRerunMaxAttempts then
-                        ReconnectComponent.attempts += 1
-                        ReconnectComponent.attemptRejoin()
-                    end
-                end
-            else
-                if ReconnectComponent.attempts > 0 then
-                    task.wait(30)
-                    if not ReconnectComponent.isDisconnected() then
-                        ReconnectComponent.attempts = 0
-                    end
-                end
-            end
-        end
-    end)
-end
-
-function ReconnectComponent.stop()
-    AppConfig.AutoRerunOnDisconnect = false
-    StateStore.autoRerunActive = false
-    if DiscordWebhookComponent and DiscordWebhookComponent.stopFlusher then
-        pcall(function() DiscordWebhookComponent.stopFlusher() end)
-    end
-end
-
---==================================================
 -- [5c] COMPONENT: DiscordWebhookComponent (Eggs ESP Pro style)
 --==================================================
 DiscordWebhookComponent = {}
@@ -1057,12 +879,6 @@ function DiscordWebhookComponent.buildSessionPayload(eventType, extra)
         label = "Total Eggs",
         value = tostring(extra.totalEggs or StateStore.totalEggsCollected),
     }
-    if extra.reattempt then
-        stats[#stats + 1] = {
-            label = "Rejoin",
-            value = ("%d/%d"):format(extra.reattempt, AppConfig.AutoRerunMaxAttempts),
-        }
-    end
 
     local comps = {}
     table.insert(comps, section(
@@ -1456,7 +1272,7 @@ function PlotComponent.teleportAndDeposit()
 end
 
 --==================================================
--- [9] COMPONENT: ESPComponent (v2.2.0 Enhanced)
+-- [9] COMPONENT: ESPComponent
 --==================================================
 local ESPComponent = {}
 
@@ -3597,7 +3413,6 @@ function UIComponent.mount()
         end
     end)
 
-    -- ESP DISPLAY SETTINGS CARD
     local ESPSettingsCard = Instance.new("Frame")
     ESPSettingsCard.Size = UDim2.new(1, -4, 0, 316)
     ESPSettingsCard.LayoutOrder = 7
@@ -4118,64 +3933,6 @@ function UIComponent.mount()
         KeybindBtn.TextColor3 = AppConfig.AccentGreen
     end)
 
-    -- Auto-Rerun on Disconnect card
-    local ReconnectCard = Instance.new("Frame")
-    ReconnectCard.Size = UDim2.new(1, -4, 0, 76)
-    ReconnectCard.LayoutOrder = 2.5
-    ReconnectCard.BackgroundColor3 = AppConfig.NestedCardBg
-    ReconnectCard.Parent = SettingsScroll
-    UIComponent.applyCard(ReconnectCard, AppConfig.RadiusXL, AppConfig.NestedCardBg, AppConfig.BorderInner)
-
-    local RcTitle = Instance.new("TextLabel")
-    RcTitle.Size = UDim2.new(1, -20, 0, 20)
-    RcTitle.Position = UDim2.new(0, 14, 0, 8)
-    RcTitle.BackgroundTransparency = 1
-    RcTitle.Text = "🔁 Auto Rerun on Disconnect"
-    RcTitle.TextColor3 = AppConfig.TextPrimary
-    RcTitle.TextSize = AppConfig.TextHeader
-    RcTitle.Font = Enum.Font.GothamBold
-    RcTitle.TextXAlignment = Enum.TextXAlignment.Left
-    RcTitle.Parent = ReconnectCard
-
-    local RcDesc = Instance.new("TextLabel")
-    RcDesc.Size = UDim2.new(1, -20, 0, 16)
-    RcDesc.Position = UDim2.new(0, 14, 0, 28)
-    RcDesc.BackgroundTransparency = 1
-    RcDesc.Text = "Re-executes script + rejoins when disconnected"
-    RcDesc.TextColor3 = AppConfig.TextMuted
-    RcDesc.TextSize = AppConfig.TextMicro
-    RcDesc.Font = Enum.Font.GothamMedium
-    RcDesc.TextXAlignment = Enum.TextXAlignment.Left
-    RcDesc.Parent = ReconnectCard
-
-    local AutoRerunBtn = Instance.new("TextButton")
-    AutoRerunBtn.Size = UDim2.new(1, -20, 0, 28)
-    AutoRerunBtn.Position = UDim2.new(0, 10, 0, 44)
-    AutoRerunBtn.BackgroundColor3 = AppConfig.AccentGreen
-    AutoRerunBtn.Text = "🟢 Auto Rerun: ON — Click to Toggle"
-    AutoRerunBtn.TextColor3 = Color3.fromRGB(10, 20, 15)
-    AutoRerunBtn.TextSize = AppConfig.TextCaption
-    AutoRerunBtn.Font = Enum.Font.GothamBold
-    AutoRerunBtn.Parent = ReconnectCard
-    UIComponent.styleButton(AutoRerunBtn, AppConfig.RadiusMD, AppConfig.AccentGreen)
-
-    AutoRerunBtn.MouseButton1Click:Connect(function()
-        AppConfig.AutoRerunOnDisconnect = not AppConfig.AutoRerunOnDisconnect
-        if AppConfig.AutoRerunOnDisconnect then
-            UIComponent.setButtonDefault(AutoRerunBtn, AppConfig.AccentGreen)
-            AutoRerunBtn.Text = "🟢 Auto Rerun: ON — Click to Toggle"
-            AutoRerunBtn.TextColor3 = Color3.fromRGB(10, 20, 15)
-            ReconnectComponent.start()
-            updateStatus("Auto Rerun: ON", AppConfig.AccentGreen)
-        else
-            UIComponent.setButtonDefault(AutoRerunBtn, AppConfig.RecessedBg)
-            AutoRerunBtn.Text = "🔴 Auto Rerun: OFF — Click to Toggle"
-            AutoRerunBtn.TextColor3 = AppConfig.TextSecondary
-            ReconnectComponent.stop()
-            updateStatus("Auto Rerun: OFF", AppConfig.TextSecondary)
-        end
-    end)
-
     -- Discord Webhook Settings Card
     local DiscordCard = Instance.new("Frame")
     DiscordCard.Size = UDim2.new(1, -4, 0, 232)
@@ -4188,7 +3945,7 @@ function UIComponent.mount()
     DcTitle.Size = UDim2.new(1, -20, 0, 20)
     DcTitle.Position = UDim2.new(0, 14, 0, 8)
     DcTitle.BackgroundTransparency = 1
-    DcTitle.Text = "💬 Discord Webhook (Eggs ESP Pro Style)"
+    DcTitle.Text = "💬 Discord Webhook"
     DcTitle.TextColor3 = AppConfig.AccentDiscord
     DcTitle.TextSize = AppConfig.TextHeader
     DcTitle.Font = Enum.Font.GothamBold
@@ -4703,7 +4460,6 @@ local function cleanup()
         StateStore.screenGui = nil
     end
 
-    ReconnectComponent.isReconnecting = false
     pcall(function() DiscordWebhookComponent.stopFlusher() end)
     StateStore.reset()
 end
@@ -4781,8 +4537,6 @@ local function startApplication()
     end
 
     StabilityComponent.setupAntiAFK(true)
-    StabilityComponent.setupAutoRejoin()
-    ReconnectComponent.start()
 
     -- Discord webhook flusher + session start notification
     DiscordWebhookComponent.startFlusher()
@@ -4805,7 +4559,6 @@ local function startApplication()
         ESP = ESPComponent,
         Movement = MovementComponent,
         Plot = PlotComponent,
-        Reconnect = ReconnectComponent,
         Discord = DiscordWebhookComponent,
     }
     existing.API = {
@@ -4818,10 +4571,6 @@ local function startApplication()
         FormatWeight = Utils.formatWeight,
         TogglePin = ESPComponent.togglePin,
         RefreshBillboards = ESPComponent.refreshAllBillboards,
-        StartAutoReconnect = ReconnectComponent.start,
-        StopAutoReconnect = ReconnectComponent.stop,
-        IsDisconnected = ReconnectComponent.isDisconnected,
-        ForceRejoin = ReconnectComponent.attemptRejoin,
         DiscordTest = DiscordWebhookComponent.test,
         DiscordFlush = DiscordWebhookComponent.flush,
         DiscordSetURL = function(url) AppConfig.DiscordWebhookURL = url end,
@@ -4832,11 +4581,6 @@ local function startApplication()
         end,
     }
     getgenv().EggsESP = existing
-
-    getgenv().EggsESP_ToggleReconnect = function(enabled)
-        AppConfig.AutoRerunOnDisconnect = enabled
-        if enabled then ReconnectComponent.start() else ReconnectComponent.stop() end
-    end
 
     print(("[Eggs ESP Pro v%s] Loaded • Discord webhook: %s")
         :format(AppConfig.Version, AppConfig.DiscordWebhookEnabled and "ENABLED" or "disabled"))
