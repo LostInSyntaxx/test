@@ -1515,7 +1515,7 @@ function UIComponent.mount()
     TitleLabel.Size = UDim2.new(0, 320, 0, 20)
     TitleLabel.Position = UDim2.new(0, 16, 0, 8)
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = "EGGS ESP  <font color='#00e676'>PRO</font>"
+    TitleLabel.Text = "LuxuryXHUB  <font color='#00e676'>HUB</font>"
     TitleLabel.RichText = true
     TitleLabel.TextColor3 = AppConfig.TextPrimary
     TitleLabel.TextSize = AppConfig.TextTitle
