@@ -1527,7 +1527,6 @@ function UIComponent.mount()
     SubLabel.Size = UDim2.new(0, 320, 0, 14)
     SubLabel.Position = UDim2.new(0, 16, 0, 27)
     SubLabel.BackgroundTransparency = 1
-    SubLabel.Text = "v" .. AppConfig.Version .. " • Sidebar Tabs & Nested Cards"
     SubLabel.TextColor3 = AppConfig.TextMuted
     SubLabel.TextSize = AppConfig.TextMicro
     SubLabel.Font = Enum.Font.GothamMedium
