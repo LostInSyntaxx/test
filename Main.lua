@@ -100,11 +100,12 @@ local AppConfig = {
     TextSecondary = Color3.fromRGB(163, 163, 163),
     TextMuted = Color3.fromRGB(110, 110, 110),
 
-    -- [v2.2.0] Discord Webhook (Eggs ESP Pro style)
+    -- Discord Webhook
     DiscordWebhookEnabled = false,
     DiscordWebhookURL = "",
     DiscordWebhookUsername = "Eggs ESP Pro",
     DiscordWebhookAvatarURL = "",
+    DiscordUseLegacyEmbeds = false,
 
     DiscordFooterText = "Eggs ESP Pro",
     DiscordBannerURL = "",
@@ -161,7 +162,7 @@ ServiceManager.QueueOnTeleport = (syn and syn.queue_on_teleport)
 
 ServiceManager.RenderedEggsFolder = ServiceManager.Workspace:WaitForChild("RenderedEggs", 8)
 
--- Forward declaration for DiscordWebhookComponent (defined later)
+-- Forward declaration
 local DiscordWebhookComponent
 
 --==================================================
@@ -244,7 +245,6 @@ function StateStore.addHistoryRecord(eggName)
     StateStore.totalEggsCollected = StateStore.totalEggsCollected + 1
     if StateStore.onHistoryUpdated then StateStore.onHistoryUpdated() end
 
-    -- Discord notification (queued)
     if DiscordWebhookComponent and DiscordWebhookComponent.notifyEgg then
         local ok, err = pcall(function()
             local egg = ServiceManager.RenderedEggsFolder
@@ -583,57 +583,8 @@ function StabilityComponent.setupAntiAFK(enable)
     end
 end
 
-function StabilityComponent.setupAutoRejoin()
-    local function queueScript()
-        if ServiceManager.QueueOnTeleport then
-            pcall(function()
-                ServiceManager.QueueOnTeleport([[
-                    task.wait(3)
-                    pcall(function()
-                        loadstring(game:HttpGet("https://raw.githubusercontent.com/ThiAez/EggsESP/main/loader.lua"))()
-                    end)
-                ]])
-            end)
-        end
-    end
-
-    pcall(function()
-        StateStore.track(ServiceManager.GuiService.ErrorMessageChanged:Connect(function(msg)
-            if msg and #msg > 0 then
-                queueScript()
-                task.wait(2.5)
-                pcall(function()
-                    if #ServiceManager.Players:GetPlayers() <= 1 then
-                        ServiceManager.TeleportService:Teleport(game.PlaceId, ServiceManager.LocalPlayer)
-                    else
-                        ServiceManager.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, ServiceManager.LocalPlayer)
-                    end
-                end)
-            end
-        end))
-    end)
-
-    task.spawn(function()
-        pcall(function()
-            local promptOverlay = ServiceManager.CoreGui:WaitForChild("RobloxPromptGui", 8)
-                and ServiceManager.CoreGui.RobloxPromptGui:WaitForChild("promptOverlay", 8)
-            if promptOverlay then
-                StateStore.track(promptOverlay.ChildAdded:Connect(function(child)
-                    if child.Name == "ErrorPrompt" then
-                        queueScript()
-                        task.wait(2)
-                        pcall(function()
-                            ServiceManager.TeleportService:Teleport(game.PlaceId, ServiceManager.LocalPlayer)
-                        end)
-                    end
-                end))
-            end
-        end)
-    end)
-end
-
 --==================================================
--- [5c] COMPONENT: DiscordWebhookComponent (Eggs ESP Pro style)
+-- [5c] COMPONENT: DiscordWebhookComponent
 --==================================================
 DiscordWebhookComponent = {}
 
@@ -646,6 +597,7 @@ local function colorToInt(c)
     return math.floor(c.R * 255) * 65536 + math.floor(c.G * 255) * 256 + math.floor(c.B * 255)
 end
 
+-- HTTP POST with detailed logging
 local function httpPostJSON(url, payload)
     local body = ServiceManager.HttpService:JSONEncode(payload)
     local ok, res = pcall(function()
@@ -659,6 +611,11 @@ local function httpPostJSON(url, payload)
     if not ok then
         warn("[Discord] RequestAsync failed:", res)
         return false, nil
+    end
+    warn(("[Discord] HTTP %d • sent %d bytes • received %d bytes")
+        :format(res.StatusCode, #body, #res.Body))
+    if res.StatusCode ~= 200 and res.StatusCode ~= 204 then
+        warn("[Discord] Error body:", res.Body)
     end
     if res.StatusCode == 429 then
         local retryAfter = 2
@@ -766,6 +723,39 @@ function DiscordWebhookComponent.buildEggPayload(eggName, isRare, extra)
 
     local accent = rarityColor
     local thumbURL = extra.imageUrl or Utils.getEggImage(eggName)
+
+    -- Legacy fallback
+    if AppConfig.DiscordUseLegacyEmbeds then
+        local desc = {}
+        table.insert(desc, ("**Player:** %s"):format(
+            extra.user or ServiceManager.LocalPlayer.DisplayName))
+        if extra.weight then
+            table.insert(desc, ("**Weight:** %s"):format(Utils.formatWeight(extra.weight)))
+        end
+        if extra.distance then
+            table.insert(desc, ("**Distance:** %s"):format(Utils.formatDistance(extra.distance)))
+        end
+        if extra.bearing then
+            table.insert(desc, ("**Direction:** %s"):format(extra.bearing))
+        end
+        table.insert(desc, ("**Rarity:** %s"):format(rarityLabel))
+
+        return {
+            username = AppConfig.DiscordWebhookUsername,
+            avatar_url = (#AppConfig.DiscordWebhookAvatarURL > 0)
+                and AppConfig.DiscordWebhookAvatarURL or nil,
+            embeds = {{
+                title = (isRare and "✨ Rare Egg: " or "🥚 Egg: ") .. eggName,
+                description = table.concat(desc, "\n"),
+                color = colorToInt(accent),
+                thumbnail = thumbURL and #thumbURL > 0 and { url = thumbURL } or nil,
+                image = (AppConfig.DiscordBannerURL ~= "")
+                    and { url = AppConfig.DiscordBannerURL } or nil,
+                footer = { text = AppConfig.DiscordFooterText .. " v" .. AppConfig.Version },
+                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+            }},
+        }
+    end
 
     local comps = {}
 
@@ -880,6 +870,33 @@ function DiscordWebhookComponent.buildSessionPayload(eventType, extra)
         value = tostring(extra.totalEggs or StateStore.totalEggsCollected),
     }
 
+    -- Legacy fallback
+    if AppConfig.DiscordUseLegacyEmbeds then
+        local desc = {}
+        for _, st in ipairs(stats) do
+            table.insert(desc, ("**%s:** %s"):format(st.label, st.value))
+        end
+        if extra.reason then
+            table.insert(desc, "")
+            table.insert(desc, ("*%s*"):format(extra.reason))
+        end
+
+        return {
+            username = AppConfig.DiscordWebhookUsername,
+            avatar_url = (#AppConfig.DiscordWebhookAvatarURL > 0)
+                and AppConfig.DiscordWebhookAvatarURL or nil,
+            embeds = {{
+                title = headerTitle,
+                description = table.concat(desc, "\n"),
+                color = colorToInt(accent),
+                thumbnail = (thumbURL and #thumbURL > 0) and { url = thumbURL } or nil,
+                image = (bannerURL and #bannerURL > 0) and { url = bannerURL } or nil,
+                footer = { text = AppConfig.DiscordFooterText .. " v" .. AppConfig.Version },
+                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+            }},
+        }
+    end
+
     local comps = {}
     table.insert(comps, section(
         { ("### %s"):format(headerTitle) },
@@ -934,7 +951,7 @@ end
 function DiscordWebhookComponent.isEnabled()
     return AppConfig.DiscordWebhookEnabled
         and type(AppConfig.DiscordWebhookURL) == "string"
-        and #AppConfig.DiscordWebhookURL > 0
+        and #AppConfig.DiscordWebhookURL > 20
 end
 
 function DiscordWebhookComponent.enqueue(payload, mentionContent)
@@ -1015,12 +1032,42 @@ function DiscordWebhookComponent.notifySession(eventType, extra)
     )
 end
 
+-- Test with v2 first, legacy fallback if v2 fails
 function DiscordWebhookComponent.test()
+    -- Try current mode first
     local payload = DiscordWebhookComponent.buildSessionPayload("start", {
         reason = "Manual Test",
         totalEggs = StateStore.totalEggsCollected,
     })
-    return httpPostJSON(AppConfig.DiscordWebhookURL, payload)
+    local ok = httpPostJSON(AppConfig.DiscordWebhookURL, payload)
+    if ok then return true, "v2" end
+
+    -- If we were already on legacy, no point retrying
+    if AppConfig.DiscordUseLegacyEmbeds then
+        return false, "legacy-failed"
+    end
+
+    -- Try legacy fallback
+    warn("[Discord] v2 payload failed — trying legacy embed fallback...")
+    local legacyPayload = {
+        username = AppConfig.DiscordWebhookUsername,
+        embeds = {
+            {
+                title = "Test Message",
+                description = "v2 components failed, using legacy embed. " ..
+                    "Consider enabling `DiscordUseLegacyEmbeds` in AppConfig.",
+                color = 0x5865F2,
+                footer = { text = "Eggs ESP Pro v" .. AppConfig.Version },
+                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+            }
+        }
+    }
+    local ok2 = httpPostJSON(AppConfig.DiscordWebhookURL, legacyPayload)
+    if ok2 then
+        return true, "legacy-fallback"
+    end
+
+    return false, "both-failed"
 end
 
 --==================================================
@@ -2179,7 +2226,6 @@ function UIComponent.mount()
     AlertLayout.Padding = UDim.new(0, 8)
     AlertLayout.Parent = AlertStack
 
-    -- DEVICE SELECTION MODAL
     local DeviceFrame = Instance.new("Frame")
     DeviceFrame.Name = "DeviceSelectionFrame"
     DeviceFrame.Size = UDim2.new(0, 340, 0, 170)
@@ -2239,7 +2285,6 @@ function UIComponent.mount()
     MobileBtn.Parent = DeviceInner
     UIComponent.styleButton(MobileBtn, AppConfig.RadiusLG, AppConfig.NestedCardBg)
 
-    -- MAIN WINDOW
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, AppConfig.PCWidth, 0, AppConfig.PCHeight)
@@ -2293,8 +2338,8 @@ function UIComponent.mount()
     SubLabel.Parent = TopBar
 
     local QuickStatusPill = Instance.new("Frame")
-    QuickStatusPill.Size = UDim2.new(0, 160, 0, 26)
-    QuickStatusPill.Position = UDim2.new(1, -300, 0.5, -13)
+    QuickStatusPill.Size = UDim2.new(0, 220, 0, 26)
+    QuickStatusPill.Position = UDim2.new(1, -360, 0.5, -13)
     QuickStatusPill.BackgroundColor3 = AppConfig.OuterCardBg
     QuickStatusPill.Parent = TopBar
     UIComponent.applyCard(QuickStatusPill, AppConfig.RadiusMD, AppConfig.OuterCardBg, AppConfig.BorderInner)
@@ -2368,7 +2413,6 @@ function UIComponent.mount()
     MinimizeBtn.Parent = TopBar
     UIComponent.styleButton(MinimizeBtn, AppConfig.RadiusMD, AppConfig.OuterCardBg)
 
-    -- SIDEBAR
     local Sidebar = Instance.new("Frame")
     Sidebar.Name = "Sidebar"
     Sidebar.Size = UDim2.new(0, AppConfig.SidebarWidth, 1, -58)
@@ -2419,7 +2463,6 @@ function UIComponent.mount()
     FootMobile.Parent = SidebarFooter
     UIComponent.styleButton(FootMobile, AppConfig.RadiusSM, AppConfig.OuterCardBg)
 
-    -- CONTENT AREA
     local ContentArea = Instance.new("Frame")
     ContentArea.Name = "ContentArea"
     ContentArea.Size = UDim2.new(1, -(AppConfig.SidebarWidth + 20), 1, -58)
@@ -3935,7 +3978,7 @@ function UIComponent.mount()
 
     -- Discord Webhook Settings Card
     local DiscordCard = Instance.new("Frame")
-    DiscordCard.Size = UDim2.new(1, -4, 0, 232)
+    DiscordCard.Size = UDim2.new(1, -4, 0, 280)
     DiscordCard.LayoutOrder = 2.6
     DiscordCard.BackgroundColor3 = AppConfig.NestedCardBg
     DiscordCard.Parent = SettingsScroll
@@ -3956,7 +3999,7 @@ function UIComponent.mount()
     DcDesc.Size = UDim2.new(1, -20, 0, 16)
     DcDesc.Position = UDim2.new(0, 14, 0, 26)
     DcDesc.BackgroundTransparency = 1
-    DcDesc.Text = "Paste your webhook URL. Toggle to enable notifications."
+    DcDesc.Text = "Paste webhook URL. Enable to send notifications."
     DcDesc.TextColor3 = AppConfig.TextMuted
     DcDesc.TextSize = AppConfig.TextMicro
     DcDesc.Font = Enum.Font.GothamMedium
@@ -3964,7 +4007,7 @@ function UIComponent.mount()
     DcDesc.Parent = DiscordCard
 
     local UrlBox = Instance.new("TextBox")
-    UrlBox.Size = UDim2.new(1, -20, 0, 30)
+    UrlBox.Size = UDim2.new(1, -100, 0, 30)
     UrlBox.Position = UDim2.new(0, 10, 0, 50)
     UrlBox.BackgroundColor3 = AppConfig.RecessedBg
     UrlBox.BorderSizePixel = 0
@@ -3976,10 +4019,54 @@ function UIComponent.mount()
     UrlBox.Font = Enum.Font.GothamMedium
     UrlBox.TextXAlignment = Enum.TextXAlignment.Left
     UrlBox.ClearTextOnFocus = false
+    UrlBox.TextWrapped = false
     UrlBox.Parent = DiscordCard
     UIComponent.styleInput(UrlBox, AppConfig.RadiusMD)
     UrlBox:GetPropertyChangedSignal("Text"):Connect(function()
-        AppConfig.DiscordWebhookURL = UrlBox.Text
+        AppConfig.DiscordWebhookURL = (UrlBox.Text:match("^%s*(.-)%s*$") or "")
+    end)
+
+    local PasteBtn = Instance.new("TextButton")
+    PasteBtn.Size = UDim2.new(0, 76, 0, 30)
+    PasteBtn.Position = UDim2.new(1, -86, 0, 50)
+    PasteBtn.BackgroundColor3 = AppConfig.AccentDiscord
+    PasteBtn.Text = "📋 Paste"
+    PasteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PasteBtn.TextSize = AppConfig.TextCaption
+    PasteBtn.Font = Enum.Font.GothamBold
+    PasteBtn.Parent = DiscordCard
+    UIComponent.styleButton(PasteBtn, AppConfig.RadiusMD, AppConfig.AccentDiscord)
+
+    PasteBtn.MouseButton1Click:Connect(function()
+        local pasted = nil
+        -- Try executor clipboard APIs (in order of likelihood)
+        pcall(function()
+            if getclipboard then pasted = getclipboard() end
+        end)
+        if not pasted then
+            pcall(function()
+                if clipboard and clipboard.get then pasted = clipboard.get() end
+            end)
+        end
+        if not pasted then
+            pcall(function()
+                if setclipboard and getclipboard then pasted = getclipboard() end
+            end)
+        end
+        if not pasted then
+            pcall(function()
+                if toclipboard and getclipboard then pasted = getclipboard() end
+            end)
+        end
+
+        if pasted and #pasted > 0 then
+            pasted = pasted:match("^%s*(.-)%s*$") or pasted
+            UrlBox.Text = pasted
+            AppConfig.DiscordWebhookURL = pasted
+            updateStatus(("Pasted %d chars"):format(#pasted), AppConfig.AccentGreen)
+        else
+            updateStatus("Clipboard unavailable — paste manually", AppConfig.AccentRed)
+        end
     end)
 
     local EnableBtn = Instance.new("TextButton")
@@ -4030,27 +4117,44 @@ function UIComponent.mount()
             updateStatus("Set webhook URL first", AppConfig.AccentRed)
             return
         end
+        updateStatus("Sending test...", AppConfig.AccentBlue)
         local prev = AppConfig.DiscordWebhookEnabled
         AppConfig.DiscordWebhookEnabled = true
-        local ok = DiscordWebhookComponent.test()
+        local ok, mode = DiscordWebhookComponent.test()
         AppConfig.DiscordWebhookEnabled = prev
+
         if ok then
-            updateStatus("Test webhook sent!", AppConfig.AccentGreen)
+            if mode == "legacy-fallback" then
+                updateStatus("Test sent (legacy fallback)", AppConfig.AccentGold)
+            else
+                updateStatus("Test webhook sent!", AppConfig.AccentGreen)
+            end
         else
-            updateStatus("Test failed — check URL", AppConfig.AccentRed)
+            updateStatus("Test failed — check console (F9)", AppConfig.AccentRed)
         end
     end)
+
+    -- Legacy embeds toggle
+    local legacyToggle = UIComponent.createToggle(DiscordCard,
+        "Use Legacy Embeds",
+        "Turn ON if v2 test fails — older embed format",
+        AppConfig.DiscordUseLegacyEmbeds,
+        function(v)
+            AppConfig.DiscordUseLegacyEmbeds = v
+        end)
+    legacyToggle.Position = UDim2.new(0, 4, 0, 120)
+    legacyToggle.Size = UDim2.new(1, -8, 0, 48)
 
     local rareNotifToggle = UIComponent.createToggle(DiscordCard, "Notify Rare Eggs Only", "Disable to also notify every egg collected", AppConfig.DiscordNotifyRareEggs, function(v)
         AppConfig.DiscordNotifyRareEggs = v
     end)
-    rareNotifToggle.Position = UDim2.new(0, 4, 0, 122)
+    rareNotifToggle.Position = UDim2.new(0, 4, 0, 172)
     rareNotifToggle.Size = UDim2.new(1, -8, 0, 48)
 
     local allNotifToggle = UIComponent.createToggle(DiscordCard, "Notify Every Egg", "Spammy — only enable if you want all events", AppConfig.DiscordNotifyEggCollected, function(v)
         AppConfig.DiscordNotifyEggCollected = v
     end)
-    allNotifToggle.Position = UDim2.new(0, 4, 0, 174)
+    allNotifToggle.Position = UDim2.new(0, 4, 0, 224)
     allNotifToggle.Size = UDim2.new(1, -8, 0, 48)
 
     local TimeCard = Instance.new("Frame")
@@ -4538,7 +4642,6 @@ local function startApplication()
 
     StabilityComponent.setupAntiAFK(true)
 
-    -- Discord webhook flusher + session start notification
     DiscordWebhookComponent.startFlusher()
     if DiscordWebhookComponent.isEnabled() then
         DiscordWebhookComponent.notifySession("start", {
