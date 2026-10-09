@@ -1,42 +1,59 @@
 --==================================================
--- Rayvinz + Potion — Original code + UI Wrapper
+-- Rayvinz Tools — Claim + Potion (FIXED)
 --==================================================
 
 -- ═══════════════════════════════════════════════
--- [โค้ดเดิม: Auto Claim Reward]
+-- [1] Auto Claim Reward — ยิง TryClaimUPDRewardRE
 -- ═══════════════════════════════════════════════
 getgenv().rayvinz = false
 
-local RewardEvent = game:GetService("ReplicatedStorage")
-    :WaitForChild("Remote")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RewardEvent = ReplicatedStorage:WaitForChild("Remote")
     :WaitForChild("UpdateLog_Server")
     :WaitForChild("TryClaimUPDRewardRE")
 
 local targetRewards = {"4"}
 
-task.spawn(function()
-    while getgenv().rayvinz do
-        for _, rewardNumber in ipairs(targetRewards) do
-            local randomPrefix = ""
-            local length = math.random(5, 15)
-            for i = 1, length do
-                if math.random(1, 2) == 1 then
-                    randomPrefix = randomPrefix .. " "
-                else
-                    randomPrefix = randomPrefix .. "\t"
+local claimRunning = false
+local claimCount = 0
+local claimError = ""
+
+local function startClaimLoop()
+    if claimRunning then return end
+    claimRunning = true
+    claimError = ""
+    task.spawn(function()
+        while getgenv().rayvinz do
+            local ok, err = pcall(function()
+                for _, rewardNumber in ipairs(targetRewards) do
+                    local randomPrefix = ""
+                    local length = math.random(5, 15)
+                    for i = 1, length do
+                        if math.random(1, 2) == 1 then
+                            randomPrefix = randomPrefix .. " "
+                        else
+                            randomPrefix = randomPrefix .. "\t"
+                        end
+                    end
+                    RewardEvent:FireServer(randomPrefix .. rewardNumber)
                 end
+            end)
+            if ok then
+                claimCount = claimCount + 1
+            else
+                claimError = tostring(err)
             end
-            RewardEvent:FireServer(randomPrefix .. rewardNumber)
+            task.wait(0.1)
         end
-        task.wait(0.1)
-    end
-end)
+        claimRunning = false
+    end)
+end
 
 -- ═══════════════════════════════════════════════
--- [โค้ดเดิม: Potion ใช้ -inf / +inf]
+-- [2] Use Potion — ยิง -inf / +inf
 -- ═══════════════════════════════════════════════
 local potionS = {"DamagePotion", "LuckPotion", "TrainPotion"}
-local PotionEvent = game:GetService("ReplicatedStorage").Remote.Potion_Server.TryUsePotionRE
+local PotionEvent = ReplicatedStorage.Remote.Potion_Server.TryUsePotionRE
 
 local function usePotion()
     for _, potion in ipairs(potionS) do
@@ -52,9 +69,8 @@ local function usePotion()
 end
 
 -- ═══════════════════════════════════════════════
--- [UI Wrapper]
+-- [3] UI Setup
 -- ═══════════════════════════════════════════════
-
 local Services = {
     UIS     = game:GetService("UserInputService"),
     Tween   = game:GetService("TweenService"),
@@ -111,7 +127,9 @@ local function styleBtn(b, r, normal)
     s.Parent = b
     b.AutoButtonColor = false
     b:SetAttribute("DefaultBg", normal or b.BackgroundColor3)
-    b.MouseEnter:Connect(function() tween(b, { BackgroundColor3 = Color3.fromRGB(44,44,44) }, 0.12) end)
+    b.MouseEnter:Connect(function()
+        tween(b, { BackgroundColor3 = Color3.fromRGB(44,44,44) }, 0.12)
+    end)
     b.MouseLeave:Connect(function()
         tween(b, { BackgroundColor3 = b:GetAttribute("DefaultBg") or C.Nested }, 0.12)
     end)
@@ -126,12 +144,10 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = PARENT
 
--- ═══════════════════════════════════════════════
--- Main Window
--- ═══════════════════════════════════════════════
+-- Main window
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 300, 0, 210)
-Main.Position = UDim2.new(0, 20, 0.5, -105)
+Main.Size = UDim2.new(0, 320, 0, 230)
+Main.Position = UDim2.new(0, 20, 0.5, -115)
 Main.BackgroundColor3 = C.Bg
 Main.BackgroundTransparency = 0.02
 Main.BorderSizePixel = 0
@@ -139,6 +155,7 @@ Main.Active = true
 Main.Parent = gui
 card(Main, R.R2, C.Bg, C.Border)
 
+-- Top bar
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 36)
 TopBar.BackgroundTransparency = 1
@@ -170,7 +187,7 @@ cbc.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
 
 -- ═══════════════════════════════════════════════
--- [1] Auto Claim Toggle
+-- Card 1: Auto Claim Toggle
 -- ═══════════════════════════════════════════════
 local ToggleCard = Instance.new("Frame")
 ToggleCard.Size = UDim2.new(1, -20, 0, 52)
@@ -221,6 +238,7 @@ local kc = Instance.new("UICorner")
 kc.CornerRadius = UDim.new(1, 0)
 kc.Parent = Knob
 
+-- ✅ FIX: toggle เปิด = startClaimLoop()
 Track.MouseButton1Click:Connect(function()
     getgenv().rayvinz = not getgenv().rayvinz
     local on = getgenv().rayvinz
@@ -228,10 +246,16 @@ Track.MouseButton1Click:Connect(function()
     tween(Knob, {
         Position = on and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)
     }, 0.15)
+    if on then
+        startClaimLoop()
+        print("[Rayvinz] Claim loop started")
+    else
+        print("[Rayvinz] Claim loop stopped")
+    end
 end)
 
 -- ═══════════════════════════════════════════════
--- [2] Use Potion Button
+-- Card 2: Use Potion
 -- ═══════════════════════════════════════════════
 local PotionCard = Instance.new("Frame")
 PotionCard.Size = UDim2.new(1, -20, 0, 76)
@@ -273,31 +297,71 @@ PotionBtn.Font = Enum.Font.GothamBold
 PotionBtn.Parent = PotionCard
 styleBtn(PotionBtn, R.RM, C.Blu)
 
--- Cooldown state for the button
 local potionBusy = false
 PotionBtn.MouseButton1Click:Connect(function()
     if potionBusy then return end
     potionBusy = true
-    local oldText = PotionBtn.Text
     PotionBtn.Text = "⏳ Using..."
     PotionBtn.BackgroundColor3 = C.Gld
+    PotionBtn:SetAttribute("DefaultBg", C.Gld)
+
     task.spawn(function()
         local ok, err = pcall(usePotion)
         if not ok then
             PotionBtn.Text = "❌ Error"
             PotionBtn.BackgroundColor3 = C.Red
+            PotionBtn:SetAttribute("DefaultBg", C.Red)
             warn("[Rayvinz] Potion error: " .. tostring(err))
             task.wait(1.5)
         else
             PotionBtn.Text = "✅ Done"
             PotionBtn.BackgroundColor3 = C.Grn
+            PotionBtn:SetAttribute("DefaultBg", C.Grn)
             task.wait(1)
         end
-        PotionBtn.Text = oldText
+        PotionBtn.Text = "🧪  USE POTION"
         PotionBtn.BackgroundColor3 = C.Blu
         PotionBtn:SetAttribute("DefaultBg", C.Blu)
         potionBusy = false
     end)
+end)
+
+-- ═══════════════════════════════════════════════
+-- Card 3: Status (แสดงจำนวนครั้ง + error)
+-- ═══════════════════════════════════════════════
+local StatusCard = Instance.new("Frame")
+StatusCard.Size = UDim2.new(1, -20, 0, 30)
+StatusCard.Position = UDim2.new(0, 10, 0, 190)
+StatusCard.BackgroundColor3 = C.Nested
+StatusCard.Parent = Main
+card(StatusCard, R.RX, C.Nested, C.Border2)
+
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, -20, 1, 0)
+StatusLabel.Position = UDim2.new(0, 10, 0, 0)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Fired: 0 • Idle"
+StatusLabel.TextColor3 = C.T2
+StatusLabel.TextSize = T.Caption
+StatusLabel.Font = Enum.Font.GothamMedium
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.Parent = StatusCard
+
+-- Refresh status ทุก 0.5 วิ
+task.spawn(function()
+    while gui.Parent do
+        local txt = "Fired: " .. tostring(claimCount)
+        if getgenv().rayvinz then
+            txt = txt .. " • 🟢 Running"
+        else
+            txt = txt .. " • ⚪ Idle"
+        end
+        if claimError ~= "" then
+            txt = txt .. " • ❌ " .. claimError:sub(1, 30)
+        end
+        StatusLabel.Text = txt
+        task.wait(0.5)
+    end
 end)
 
 -- ═══════════════════════════════════════════════
@@ -329,4 +393,4 @@ Services.UIS.InputChanged:Connect(function(input)
     end
 end)
 
-print("[Rayvinz] UI loaded (Claim + Potion).")
+print("[Rayvinz] UI loaded — Claim + Potion ready.")
