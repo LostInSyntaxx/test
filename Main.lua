@@ -1,28 +1,74 @@
 --==================================================
--- Rayvinz Tools — Claim + Potion (FIXED)
+-- Rayvinz Tools — Diagnostic + UI + Claim + Potion
 --==================================================
 
+print("════════════════════════════════════════")
+print("[Rayvinz] Script starting...")
+print("════════════════════════════════════════")
+
 -- ═══════════════════════════════════════════════
--- [1] Auto Claim Reward — ยิง TryClaimUPDRewardRE
+-- [STEP 1] DIAGNOSTIC — เช็ค Remote
+-- ═══════════════════════════════════════════════
+local RS = game:GetService("ReplicatedStorage")
+
+local remote      = RS:FindFirstChild("Remote")
+local updateLog   = remote and remote:FindFirstChild("UpdateLog_Server")
+local claimEvent  = updateLog and updateLog:FindFirstChild("TryClaimUPDRewardRE")
+local potionSrv   = remote and remote:FindFirstChild("Potion_Server")
+local potionEvent = potionSrv and potionSrv:FindFirstChild("TryUsePotionRE")
+
+print("[DIAG] RS.Remote                 :", remote and "✅" or "❌ nil")
+print("[DIAG] └ UpdateLog_Server        :", updateLog and "✅" or "❌ nil")
+print("[DIAG]    └ TryClaimUPDRewardRE  :", claimEvent and ("✅ " .. claimEvent.ClassName) or "❌ nil")
+print("[DIAG] └ Potion_Server           :", potionSrv and "✅" or "❌ nil")
+print("[DIAG]    └ TryUsePotionRE       :", potionEvent and ("✅ " .. potionEvent.ClassName) or "❌ nil")
+
+if updateLog then
+    print("[DIAG] UpdateLog_Server children:")
+    for _, c in ipairs(updateLog:GetChildren()) do
+        print("       -", c.Name, "|", c.ClassName)
+    end
+end
+if potionSrv then
+    print("[DIAG] Potion_Server children:")
+    for _, c in ipairs(potionSrv:GetChildren()) do
+        print("       -", c.Name, "|", c.ClassName)
+    end
+end
+
+-- ═══════════════════════════════════════════════
+-- [STEP 2] DEFINITIONS
 -- ═══════════════════════════════════════════════
 getgenv().rayvinz = false
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RewardEvent = ReplicatedStorage:WaitForChild("Remote")
-    :WaitForChild("UpdateLog_Server")
-    :WaitForChild("TryClaimUPDRewardRE")
-
 local targetRewards = {"4"}
+local potionS = {"DamagePotion", "LuckPotion", "TrainPotion"}
 
-local claimRunning = false
 local claimCount = 0
 local claimError = ""
+local claimRunning = false
 
+-- สถานะ UI (จะถูกอัปเดตจาก loop)
+local uiState = {
+    status = "Idle",
+    statusColor = nil,
+}
+
+-- ═══════════════════════════════════════════════
+-- CLAIM LOOP
+-- ═══════════════════════════════════════════════
 local function startClaimLoop()
     if claimRunning then return end
+    if not claimEvent then
+        claimError = "Remote not found"
+        print("[CLAIM] ❌ Cannot start: TryClaimUPDRewardRE missing")
+        return
+    end
     claimRunning = true
     claimError = ""
+
     task.spawn(function()
+        print("[CLAIM] ▶ Loop started")
         while getgenv().rayvinz do
             local ok, err = pcall(function()
                 for _, rewardNumber in ipairs(targetRewards) do
@@ -35,41 +81,51 @@ local function startClaimLoop()
                             randomPrefix = randomPrefix .. "\t"
                         end
                     end
-                    RewardEvent:FireServer(randomPrefix .. rewardNumber)
+                    claimEvent:FireServer(randomPrefix .. rewardNumber)
                 end
             end)
             if ok then
                 claimCount = claimCount + 1
             else
                 claimError = tostring(err)
+                print("[CLAIM] ❌ Error:", err)
             end
             task.wait(0.1)
         end
+        print("[CLAIM] ⏹ Loop stopped")
         claimRunning = false
     end)
 end
 
 -- ═══════════════════════════════════════════════
--- [2] Use Potion — ยิง -inf / +inf
+-- POTION
 -- ═══════════════════════════════════════════════
-local potionS = {"DamagePotion", "LuckPotion", "TrainPotion"}
-local PotionEvent = ReplicatedStorage.Remote.Potion_Server.TryUsePotionRE
-
 local function usePotion()
+    if not potionEvent then
+        print("[POTION] ❌ Remote not found")
+        return false, "Potion remote not found"
+    end
+    print("[POTION] ▶ -inf")
     for _, potion in ipairs(potionS) do
-        PotionEvent:FireServer(potion, -1/0)
+        local ok, err = pcall(function()
+            potionEvent:FireServer(potion, -1/0)
+        end)
+        if not ok then print("[POTION] ❌", potion, err) end
     end
     task.wait(1)
-    if potionS == potionS then do
-        for _, potion in ipairs(potionS) do
-            PotionEvent:FireServer(potion, 1/0)
-        end
+    print("[POTION] ▶ +inf")
+    for _, potion in ipairs(potionS) do
+        local ok, err = pcall(function()
+            potionEvent:FireServer(potion, 1/0)
+        end)
+        if not ok then print("[POTION] ❌", potion, err) end
     end
-    end
+    print("[POTION] ✅ Done")
+    return true
 end
 
 -- ═══════════════════════════════════════════════
--- [3] UI Setup
+-- [STEP 3] UI
 -- ═══════════════════════════════════════════════
 local Services = {
     UIS     = game:GetService("UserInputService"),
@@ -79,21 +135,16 @@ local Services = {
 local PARENT = (gethui and select(2, pcall(gethui))) or Services.CoreGui
 
 local C = {
-    Bg      = Color3.fromHex("#171717"),
-    Card    = Color3.fromHex("#1F1F1F"),
-    Nested  = Color3.fromHex("#242424"),
-    Border  = Color3.fromHex("#2C2C2C"),
-    Border2 = Color3.fromHex("#333333"),
-    Grn     = Color3.fromRGB(0, 230, 118),
-    Blu     = Color3.fromRGB(0, 150, 255),
-    Red     = Color3.fromRGB(255, 61, 87),
-    Gld     = Color3.fromRGB(255, 215, 0),
-    T1      = Color3.fromRGB(255, 255, 255),
-    T2      = Color3.fromRGB(163, 163, 163),
-    T3      = Color3.fromRGB(110, 110, 110),
+    Bg=Color3.fromHex("#171717"), Card=Color3.fromHex("#1F1F1F"),
+    Nested=Color3.fromHex("#242424"), Border=Color3.fromHex("#2C2C2C"),
+    Border2=Color3.fromHex("#333333"),
+    Grn=Color3.fromRGB(0,230,118), Blu=Color3.fromRGB(0,150,255),
+    Red=Color3.fromRGB(255,61,87), Gld=Color3.fromRGB(255,215,0),
+    T1=Color3.fromRGB(255,255,255), T2=Color3.fromRGB(163,163,163),
+    T3=Color3.fromRGB(110,110,110),
 }
-local R = { R2 = 16, RX = 12, RL = 8, RM = 6 }
-local T = { Title = 14, Body = 11, Caption = 9, Micro = 8 }
+local R = { R2=16, RX=12, RL=8, RM=6 }
+local T = { Title=14, Body=11, Caption=9, Micro=8 }
 
 local function tween(o, p, d)
     if not o or not o.Parent then return end
@@ -144,10 +195,10 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = PARENT
 
--- Main window
+-- Window
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 320, 0, 230)
-Main.Position = UDim2.new(0, 20, 0.5, -115)
+Main.Size = UDim2.new(0, 340, 0, 280)
+Main.Position = UDim2.new(0, 20, 0.5, -140)
 Main.BackgroundColor3 = C.Bg
 Main.BackgroundTransparency = 0.02
 Main.BorderSizePixel = 0
@@ -186,12 +237,45 @@ cbc.CornerRadius = UDim.new(0, R.RM)
 cbc.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
 
--- ═══════════════════════════════════════════════
--- Card 1: Auto Claim Toggle
--- ═══════════════════════════════════════════════
+-- Diagnostic card
+local DiagCard = Instance.new("Frame")
+DiagCard.Size = UDim2.new(1, -20, 0, 60)
+DiagCard.Position = UDim2.new(0, 10, 0, 42)
+DiagCard.BackgroundColor3 = C.Nested
+DiagCard.Parent = Main
+card(DiagCard, R.RX, C.Nested, C.Border2)
+
+local DiagTitle = Instance.new("TextLabel")
+DiagTitle.Size = UDim2.new(1, -20, 0, 16)
+DiagTitle.Position = UDim2.new(0, 12, 0, 6)
+DiagTitle.BackgroundTransparency = 1
+DiagTitle.Text = "🔍 Remote Diagnostic"
+DiagTitle.TextColor3 = C.T1
+DiagTitle.TextSize = T.Body
+DiagTitle.Font = Enum.Font.GothamBold
+DiagTitle.TextXAlignment = Enum.TextXAlignment.Left
+DiagTitle.Parent = DiagCard
+
+local function diagLine(parent, y, label, ok)
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, -20, 0, 12)
+    l.Position = UDim2.new(0, 12, 0, y)
+    l.BackgroundTransparency = 1
+    l.Text = (ok and "✅ " or "❌ ") .. label
+    l.TextColor3 = ok and C.Grn or C.Red
+    l.TextSize = T.Micro
+    l.Font = Enum.Font.GothamMedium
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.Parent = parent
+end
+
+diagLine(DiagCard, 24, "TryClaimUPDRewardRE", claimEvent ~= nil)
+diagLine(DiagCard, 38, "TryUsePotionRE",      potionEvent ~= nil)
+
+-- Claim toggle card
 local ToggleCard = Instance.new("Frame")
 ToggleCard.Size = UDim2.new(1, -20, 0, 52)
-ToggleCard.Position = UDim2.new(0, 10, 0, 46)
+ToggleCard.Position = UDim2.new(0, 10, 0, 108)
 ToggleCard.BackgroundColor3 = C.Nested
 ToggleCard.Parent = Main
 card(ToggleCard, R.RX, C.Nested, C.Border2)
@@ -238,7 +322,6 @@ local kc = Instance.new("UICorner")
 kc.CornerRadius = UDim.new(1, 0)
 kc.Parent = Knob
 
--- ✅ FIX: toggle เปิด = startClaimLoop()
 Track.MouseButton1Click:Connect(function()
     getgenv().rayvinz = not getgenv().rayvinz
     local on = getgenv().rayvinz
@@ -248,18 +331,13 @@ Track.MouseButton1Click:Connect(function()
     }, 0.15)
     if on then
         startClaimLoop()
-        print("[Rayvinz] Claim loop started")
-    else
-        print("[Rayvinz] Claim loop stopped")
     end
 end)
 
--- ═══════════════════════════════════════════════
--- Card 2: Use Potion
--- ═══════════════════════════════════════════════
+-- Potion card
 local PotionCard = Instance.new("Frame")
 PotionCard.Size = UDim2.new(1, -20, 0, 76)
-PotionCard.Position = UDim2.new(0, 10, 0, 106)
+PotionCard.Position = UDim2.new(0, 10, 0, 168)
 PotionCard.BackgroundColor3 = C.Nested
 PotionCard.Parent = Main
 card(PotionCard, R.RX, C.Nested, C.Border2)
@@ -304,15 +382,13 @@ PotionBtn.MouseButton1Click:Connect(function()
     PotionBtn.Text = "⏳ Using..."
     PotionBtn.BackgroundColor3 = C.Gld
     PotionBtn:SetAttribute("DefaultBg", C.Gld)
-
     task.spawn(function()
-        local ok, err = pcall(usePotion)
+        local ok = usePotion()
         if not ok then
-            PotionBtn.Text = "❌ Error"
+            PotionBtn.Text = "❌ Remote not found"
             PotionBtn.BackgroundColor3 = C.Red
             PotionBtn:SetAttribute("DefaultBg", C.Red)
-            warn("[Rayvinz] Potion error: " .. tostring(err))
-            task.wait(1.5)
+            task.wait(2)
         else
             PotionBtn.Text = "✅ Done"
             PotionBtn.BackgroundColor3 = C.Grn
@@ -326,12 +402,10 @@ PotionBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- ═══════════════════════════════════════════════
--- Card 3: Status (แสดงจำนวนครั้ง + error)
--- ═══════════════════════════════════════════════
+-- Status card
 local StatusCard = Instance.new("Frame")
-StatusCard.Size = UDim2.new(1, -20, 0, 30)
-StatusCard.Position = UDim2.new(0, 10, 0, 190)
+StatusCard.Size = UDim2.new(1, -20, 0, 26)
+StatusCard.Position = UDim2.new(0, 10, 0, 248)
 StatusCard.BackgroundColor3 = C.Nested
 StatusCard.Parent = Main
 card(StatusCard, R.RX, C.Nested, C.Border2)
@@ -345,9 +419,9 @@ StatusLabel.TextColor3 = C.T2
 StatusLabel.TextSize = T.Caption
 StatusLabel.Font = Enum.Font.GothamMedium
 StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.TextTruncate = Enum.TextTruncate.AtEnd
 StatusLabel.Parent = StatusCard
 
--- Refresh status ทุก 0.5 วิ
 task.spawn(function()
     while gui.Parent do
         local txt = "Fired: " .. tostring(claimCount)
@@ -357,16 +431,14 @@ task.spawn(function()
             txt = txt .. " • ⚪ Idle"
         end
         if claimError ~= "" then
-            txt = txt .. " • ❌ " .. claimError:sub(1, 30)
+            txt = txt .. " • ❌ " .. claimError:sub(1, 40)
         end
         StatusLabel.Text = txt
         task.wait(0.5)
     end
 end)
 
--- ═══════════════════════════════════════════════
 -- Draggable
--- ═══════════════════════════════════════════════
 local dragging, dragStart, startPos = false, nil, nil
 TopBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -393,4 +465,8 @@ Services.UIS.InputChanged:Connect(function(input)
     end
 end)
 
-print("[Rayvinz] UI loaded — Claim + Potion ready.")
+print("════════════════════════════════════════")
+print("[Rayvinz] ✅ Ready")
+print("   Claim remote:", claimEvent ~= nil and "OK" or "MISSING")
+print("   Potion remote:", potionEvent ~= nil and "OK" or "MISSING")
+print("════════════════════════════════════════")
