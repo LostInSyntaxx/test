@@ -7,7 +7,7 @@ print("[Rayvinz] Script starting...")
 print("════════════════════════════════════════")
 
 -- ═══════════════════════════════════════════════
--- [STEP 1] DIAGNOSTIC — เช็ค Remote
+-- [STEP 1] DIAGNOSTIC
 -- ═══════════════════════════════════════════════
 local RS = game:GetService("ReplicatedStorage")
 
@@ -17,11 +17,11 @@ local claimEvent  = updateLog and updateLog:FindFirstChild("TryClaimUPDRewardRE"
 local potionSrv   = remote and remote:FindFirstChild("Potion_Server")
 local potionEvent = potionSrv and potionSrv:FindFirstChild("TryUsePotionRE")
 
-print("[DIAG] RS.Remote                 :", remote and "✅" or "❌ nil")
-print("[DIAG] └ UpdateLog_Server        :", updateLog and "✅" or "❌ nil")
-print("[DIAG]    └ TryClaimUPDRewardRE  :", claimEvent and ("✅ " .. claimEvent.ClassName) or "❌ nil")
-print("[DIAG] └ Potion_Server           :", potionSrv and "✅" or "❌ nil")
-print("[DIAG]    └ TryUsePotionRE       :", potionEvent and ("✅ " .. potionEvent.ClassName) or "❌ nil")
+print("[DIAG] RS.Remote                 :", remote and "OK" or "nil")
+print("[DIAG] -- UpdateLog_Server       :", updateLog and "OK" or "nil")
+print("[DIAG]    -- TryClaimUPDRewardRE :", claimEvent and ("OK " .. claimEvent.ClassName) or "nil")
+print("[DIAG] -- Potion_Server          :", potionSrv and "OK" or "nil")
+print("[DIAG]    -- TryUsePotionRE      :", potionEvent and ("OK " .. potionEvent.ClassName) or "nil")
 
 if updateLog then
     print("[DIAG] UpdateLog_Server children:")
@@ -48,12 +48,6 @@ local claimCount = 0
 local claimError = ""
 local claimRunning = false
 
--- สถานะ UI (จะถูกอัปเดตจาก loop)
-local uiState = {
-    status = "Idle",
-    statusColor = nil,
-}
-
 -- ═══════════════════════════════════════════════
 -- CLAIM LOOP
 -- ═══════════════════════════════════════════════
@@ -61,14 +55,14 @@ local function startClaimLoop()
     if claimRunning then return end
     if not claimEvent then
         claimError = "Remote not found"
-        print("[CLAIM] ❌ Cannot start: TryClaimUPDRewardRE missing")
+        print("[CLAIM] Cannot start: TryClaimUPDRewardRE missing")
         return
     end
     claimRunning = true
     claimError = ""
 
     task.spawn(function()
-        print("[CLAIM] ▶ Loop started")
+        print("[CLAIM] Loop started")
         while getgenv().rayvinz do
             local ok, err = pcall(function()
                 for _, rewardNumber in ipairs(targetRewards) do
@@ -88,11 +82,11 @@ local function startClaimLoop()
                 claimCount = claimCount + 1
             else
                 claimError = tostring(err)
-                print("[CLAIM] ❌ Error:", err)
+                print("[CLAIM] Error:", err)
             end
             task.wait(0.1)
         end
-        print("[CLAIM] ⏹ Loop stopped")
+        print("[CLAIM] Loop stopped")
         claimRunning = false
     end)
 end
@@ -102,25 +96,25 @@ end
 -- ═══════════════════════════════════════════════
 local function usePotion()
     if not potionEvent then
-        print("[POTION] ❌ Remote not found")
-        return false, "Potion remote not found"
+        print("[POTION] Remote not found")
+        return false
     end
-    print("[POTION] ▶ -inf")
+    print("[POTION] -inf")
     for _, potion in ipairs(potionS) do
         local ok, err = pcall(function()
             potionEvent:FireServer(potion, -1/0)
         end)
-        if not ok then print("[POTION] ❌", potion, err) end
+        if not ok then print("[POTION] err", potion, err) end
     end
     task.wait(1)
-    print("[POTION] ▶ +inf")
+    print("[POTION] +inf")
     for _, potion in ipairs(potionS) do
         local ok, err = pcall(function()
             potionEvent:FireServer(potion, 1/0)
         end)
-        if not ok then print("[POTION] ❌", potion, err) end
+        if not ok then print("[POTION] err", potion, err) end
     end
-    print("[POTION] ✅ Done")
+    print("[POTION] Done")
     return true
 end
 
@@ -216,7 +210,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -60, 1, 0)
 Title.Position = UDim2.new(0, 14, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "🎁 Rayvinz Tools"
+Title.Text = "Rayvinz Tools"
 Title.TextColor3 = C.T1
 Title.TextSize = T.Title
 Title.Font = Enum.Font.GothamBold
@@ -227,7 +221,7 @@ local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 24, 0, 24)
 CloseBtn.Position = UDim2.new(1, -30, 0.5, -12)
 CloseBtn.BackgroundColor3 = C.Nested
-CloseBtn.Text = "✕"
+CloseBtn.Text = "X"
 CloseBtn.TextColor3 = C.T2
 CloseBtn.TextSize = 11
 CloseBtn.Font = Enum.Font.GothamBold
@@ -249,7 +243,7 @@ local DiagTitle = Instance.new("TextLabel")
 DiagTitle.Size = UDim2.new(1, -20, 0, 16)
 DiagTitle.Position = UDim2.new(0, 12, 0, 6)
 DiagTitle.BackgroundTransparency = 1
-DiagTitle.Text = "🔍 Remote Diagnostic"
+DiagTitle.Text = "Remote Diagnostic"
 DiagTitle.TextColor3 = C.T1
 DiagTitle.TextSize = T.Body
 DiagTitle.Font = Enum.Font.GothamBold
@@ -261,7 +255,7 @@ local function diagLine(parent, y, label, ok)
     l.Size = UDim2.new(1, -20, 0, 12)
     l.Position = UDim2.new(0, 12, 0, y)
     l.BackgroundTransparency = 1
-    l.Text = (ok and "✅ " or "❌ ") .. label
+    l.Text = (ok and "[OK] " or "[X] ") .. label
     l.TextColor3 = ok and C.Grn or C.Red
     l.TextSize = T.Micro
     l.Font = Enum.Font.GothamMedium
@@ -295,7 +289,7 @@ local Td = Instance.new("TextLabel")
 Td.Size = UDim2.new(1, -80, 0, 16)
 Td.Position = UDim2.new(0, 14, 0, 28)
 Td.BackgroundTransparency = 1
-Td.Text = "ยิง TryClaimUPDRewardRE วนไป"
+Td.Text = "Fire TryClaimUPDRewardRE in loop"
 Td.TextColor3 = C.T3
 Td.TextSize = T.Micro
 Td.Font = Enum.Font.GothamMedium
@@ -346,7 +340,7 @@ local Pt = Instance.new("TextLabel")
 Pt.Size = UDim2.new(1, -20, 0, 20)
 Pt.Position = UDim2.new(0, 14, 0, 8)
 Pt.BackgroundTransparency = 1
-Pt.Text = "Use Potion (-∞ → +∞)"
+Pt.Text = "Use Potion"
 Pt.TextColor3 = C.T1
 Pt.TextSize = T.Body
 Pt.Font = Enum.Font.GothamBold
@@ -368,7 +362,7 @@ local PotionBtn = Instance.new("TextButton")
 PotionBtn.Size = UDim2.new(1, -20, 0, 28)
 PotionBtn.Position = UDim2.new(0, 10, 0, 42)
 PotionBtn.BackgroundColor3 = C.Blu
-PotionBtn.Text = "🧪  USE POTION"
+PotionBtn.Text = "USE POTION"
 PotionBtn.TextColor3 = Color3.new(1, 1, 1)
 PotionBtn.TextSize = T.Body
 PotionBtn.Font = Enum.Font.GothamBold
@@ -379,23 +373,23 @@ local potionBusy = false
 PotionBtn.MouseButton1Click:Connect(function()
     if potionBusy then return end
     potionBusy = true
-    PotionBtn.Text = "⏳ Using..."
+    PotionBtn.Text = "Using..."
     PotionBtn.BackgroundColor3 = C.Gld
     PotionBtn:SetAttribute("DefaultBg", C.Gld)
     task.spawn(function()
         local ok = usePotion()
         if not ok then
-            PotionBtn.Text = "❌ Remote not found"
+            PotionBtn.Text = "Remote not found"
             PotionBtn.BackgroundColor3 = C.Red
             PotionBtn:SetAttribute("DefaultBg", C.Red)
             task.wait(2)
         else
-            PotionBtn.Text = "✅ Done"
+            PotionBtn.Text = "Done"
             PotionBtn.BackgroundColor3 = C.Grn
             PotionBtn:SetAttribute("DefaultBg", C.Grn)
             task.wait(1)
         end
-        PotionBtn.Text = "🧪  USE POTION"
+        PotionBtn.Text = "USE POTION"
         PotionBtn.BackgroundColor3 = C.Blu
         PotionBtn:SetAttribute("DefaultBg", C.Blu)
         potionBusy = false
@@ -414,7 +408,7 @@ local StatusLabel = Instance.new("TextLabel")
 StatusLabel.Size = UDim2.new(1, -20, 1, 0)
 StatusLabel.Position = UDim2.new(0, 10, 0, 0)
 StatusLabel.BackgroundTransparency = 1
-StatusLabel.Text = "Fired: 0 • Idle"
+StatusLabel.Text = "Fired: 0 | Idle"
 StatusLabel.TextColor3 = C.T2
 StatusLabel.TextSize = T.Caption
 StatusLabel.Font = Enum.Font.GothamMedium
@@ -426,12 +420,12 @@ task.spawn(function()
     while gui.Parent do
         local txt = "Fired: " .. tostring(claimCount)
         if getgenv().rayvinz then
-            txt = txt .. " • 🟢 Running"
+            txt = txt .. " | Running"
         else
-            txt = txt .. " • ⚪ Idle"
+            txt = txt .. " | Idle"
         end
         if claimError ~= "" then
-            txt = txt .. " • ❌ " .. claimError:sub(1, 40)
+            txt = txt .. " | ERR: " .. claimError:sub(1, 40)
         end
         StatusLabel.Text = txt
         task.wait(0.5)
@@ -466,7 +460,7 @@ Services.UIS.InputChanged:Connect(function(input)
 end)
 
 print("════════════════════════════════════════")
-print("[Rayvinz] ✅ Ready")
-print("   Claim remote:", claimEvent ~= nil and "OK" or "MISSING")
+print("[Rayvinz] Ready")
+print("   Claim remote :", claimEvent ~= nil and "OK" or "MISSING")
 print("   Potion remote:", potionEvent ~= nil and "OK" or "MISSING")
 print("════════════════════════════════════════")
